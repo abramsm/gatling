@@ -88,6 +88,26 @@ class CheckOneWithExtractorFactoryBuilder[C <: Check[R, X], R, X](f: (ExtractorF
 class CheckMultipleWithExtractorFactoryBuilder[C <: Check[R, X], R, X <: List[_]](f: (ExtractorFactory[R, X], CheckStrategy[X], Option[String]) => C, extractorFactory: ExtractorFactory[R, X]) {
 
 	def verify[XP](strategy: CheckStrategy[X]) = new CheckWithVerifyBuilder(f, extractorFactory, strategy) with CheckWithSaveAsBuilder[C, R, X]
+	def notEmpty = verify(new CheckStrategy[X] {
+		def apply(value: Option[X], s: Session) = value match {
+			case Some(extracted) =>
+				if (!extracted.isEmpty)
+					CheckResult(true, value)
+				else
+					CheckResult(false, value, Some("Check 'notEmpty' failed, found empty"))
+			case None => CheckResult(false, value, Some("Check 'notEmpty' failed, found None"))
+		}
+	})
+	def empty = verify(new CheckStrategy[X] {
+		def apply(value: Option[X], s: Session) = value match {
+			case Some(extracted) =>
+				if (extracted.isEmpty)
+					CheckResult(true, value)
+				else
+					CheckResult(false, value, Some("Check 'empty' failed, found " + extracted))
+			case None => CheckResult(false, value, Some("Check 'empty' failed, found None"))
+		}
+	})
 }
 
 trait CheckWithSaveAsBuilder[C <: Check[R, X], R, X] extends CheckWithVerifyBuilder[C, R, X] {
