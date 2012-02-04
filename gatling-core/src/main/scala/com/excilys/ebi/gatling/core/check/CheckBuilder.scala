@@ -38,13 +38,13 @@ class CheckOneWithExtractorFactoryBuilder[C <: Check[R, X], R, X](f: (ExtractorF
 	def exists = verify(new CheckStrategy[X] {
 		def apply(value: Option[X], s: Session) = value match {
 			case Some(_) => CheckResult(true, value)
-			case None => CheckResult(false, value, Some("Check 'exists' failed"))
+			case None => CheckResult(false, None, Some("Check 'exists' failed"))
 		}
 	})
 	def notExists = verify(new CheckStrategy[X] {
 		def apply(value: Option[X], s: Session) = value match {
 			case None => CheckResult(true, value)
-			case Some(extracted) => CheckResult(false, value, Some("Check 'notExists' failed, found " + extracted))
+			case Some(extracted) => CheckResult(false, None, Some("Check 'notExists' failed, found " + extracted))
 		}
 	})
 	def is(expected: Session => X) = verify(new CheckStrategy[X] {
@@ -56,7 +56,7 @@ class CheckOneWithExtractorFactoryBuilder[C <: Check[R, X], R, X](f: (ExtractorF
 				else
 					CheckResult(false, value, Some("Check 'eq' failed, found " + extracted + " but expected " + expectedValue))
 			}
-			case None => CheckResult(false, value, Some("Check 'eq' failed, found nothing"))
+			case None => CheckResult(false, None, Some("Check 'eq' failed, found nothing"))
 		}
 	})
 	def not(expected: Session => X) = verify(new CheckStrategy[X] {
@@ -67,7 +67,7 @@ class CheckOneWithExtractorFactoryBuilder[C <: Check[R, X], R, X](f: (ExtractorF
 				if (extracted != expectedValue)
 					CheckResult(true, value)
 				else
-					CheckResult(false, value, Some("Check 'neq' failed, found " + extracted + " but expected !" + expectedValue))
+					CheckResult(false, None, Some("Check 'neq' failed, found " + extracted + " but expected !" + expectedValue))
 			}
 		}
 	})
@@ -78,9 +78,9 @@ class CheckOneWithExtractorFactoryBuilder[C <: Check[R, X], R, X](f: (ExtractorF
 				if (expectedValue.contains(extracted))
 					CheckResult(true, value)
 				else
-					CheckResult(false, value, Some("Check 'in' failed, found " + extracted + " but expected " + expectedValue))
+					CheckResult(false, None, Some("Check 'in' failed, found " + extracted + " but expected " + expectedValue))
 			}
-			case None => CheckResult(false, value, Some("Check 'eq' failed, found nothing"))
+			case None => CheckResult(false, None, Some("Check 'eq' failed, found nothing"))
 		}
 	})
 }
@@ -94,8 +94,8 @@ class CheckMultipleWithExtractorFactoryBuilder[C <: Check[R, X], R, X <: List[_]
 				if (!extracted.isEmpty)
 					CheckResult(true, value)
 				else
-					CheckResult(false, value, Some("Check 'notEmpty' failed, found empty"))
-			case None => CheckResult(false, value, Some("Check 'notEmpty' failed, found None"))
+					CheckResult(false, None, Some("Check 'notEmpty' failed, found empty"))
+			case None => CheckResult(false, None, Some("Check 'notEmpty' failed, found None"))
 		}
 	})
 	def empty = verify(new CheckStrategy[X] {
@@ -104,8 +104,8 @@ class CheckMultipleWithExtractorFactoryBuilder[C <: Check[R, X], R, X <: List[_]
 				if (extracted.isEmpty)
 					CheckResult(true, value)
 				else
-					CheckResult(false, value, Some("Check 'empty' failed, found " + extracted))
-			case None => CheckResult(false, value, Some("Check 'empty' failed, found None"))
+					CheckResult(false, None, Some("Check 'empty' failed, found " + extracted))
+			case None => CheckResult(false, None, Some("Check 'empty' failed, found None"))
 		}
 	})
 	def is(expected: Session => X) = verify(new CheckStrategy[X] {
@@ -115,9 +115,9 @@ class CheckMultipleWithExtractorFactoryBuilder[C <: Check[R, X], R, X <: List[_]
 				if (extracted == expectedValue)
 					CheckResult(true, value)
 				else
-					CheckResult(false, value, Some("Check 'eq' failed, found " + extracted + " but expected " + expectedValue))
+					CheckResult(false, None, Some("Check 'eq' failed, found " + extracted + " but expected " + expectedValue))
 			}
-			case None => CheckResult(false, value, Some("Check 'eq' failed, found nothing"))
+			case None => CheckResult(false, None, Some("Check 'eq' failed, found nothing"))
 		}
 	})
 }
