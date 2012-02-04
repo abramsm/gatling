@@ -16,8 +16,9 @@
 package com.excilys.ebi.gatling.core.check.extractor
 
 import com.excilys.ebi.gatling.core.log.Logging
+import com.excilys.ebi.gatling.core.session.Session
 
-class MultiRegexExtractor(textContent: String) extends Extractor[List[String]] with Logging {
+class MultiRegexExtractor(textContent: String) extends Extractor[List[String]] {
 
 	/**
 	 * The actual extraction happens here. The regular expression is compiled and the occurrence-th
@@ -27,8 +28,6 @@ class MultiRegexExtractor(textContent: String) extends Extractor[List[String]] w
 	 * @return an option containing the value if found, None otherwise
 	 */
 	def extract(expression: String) = {
-		logger.debug("Extracting with expression : {}", expression)
-
 		expression.r.findAllIn(textContent).matchData.map { matcher =>
 			new String(matcher.group(1 min matcher.groupCount))
 		}.toList

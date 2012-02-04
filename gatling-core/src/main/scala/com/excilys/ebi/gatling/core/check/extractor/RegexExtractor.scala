@@ -25,7 +25,7 @@ import com.excilys.ebi.gatling.core.log.Logging
  * @param textContent the text where the search will be made
  * @param occurence the occurrence of the result that should be returned
  */
-class RegexExtractor(textContent: String, occurrence: Int) extends Extractor[String] with Logging {
+class RegexExtractor(textContent: String, occurrence: Int) extends Extractor[String] {
 	/**
 	 * The actual extraction happens here. The regular expression is compiled and the occurrence-th
 	 * result is returned if existing.
@@ -34,7 +34,6 @@ class RegexExtractor(textContent: String, occurrence: Int) extends Extractor[Str
 	 * @return an option containing the value if found, None otherwise
 	 */
 	def extract(expression: String): Option[String] = {
-		logger.debug("Extracting with expression : {}", expression)
 
 		val matcher = Pattern.compile(expression).matcher(textContent)
 

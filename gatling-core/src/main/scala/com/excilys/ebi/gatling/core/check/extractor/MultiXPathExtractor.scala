@@ -15,15 +15,16 @@
  */
 package com.excilys.ebi.gatling.core.check.extractor
 
-import java.io.InputStream
+import scala.annotation.implicitNotFound
 import scala.collection.JavaConversions.asScalaBuffer
+
 import org.jaxen.dom.DOMXPath
 import org.jaxen.XPath
-import org.w3c.dom.Node
-import com.excilys.ebi.gatling.core.log.Logging
-import org.w3c.dom.Document
+import org.w3c.dom.{ Node, Document }
 
-class MultiXPathExtractor(document: Document) extends Extractor[List[String]] with Logging {
+import com.excilys.ebi.gatling.core.session.Session
+
+class MultiXPathExtractor(document: Document) extends Extractor[List[String]] {
 
 	/**
 	 * The actual extraction happens here. The XPath expression is searched for and the occurrence-th
@@ -33,11 +34,7 @@ class MultiXPathExtractor(document: Document) extends Extractor[List[String]] wi
 	 * @return an option containing the value if found, None otherwise
 	 */
 	def extract(expression: String) = {
-
 		val xpathExpression: XPath = new DOMXPath(expression);
-
-		logger.debug("Extracting with expression : {}", expression)
-
 		xpathExpression.selectNodes(document).asInstanceOf[java.util.List[Node]].map(_.getTextContent).toList
 	}
 }

@@ -49,7 +49,11 @@ object Check {
  * @param strategy the strategy used to perform the Check
  * @param expected the expected value of what has been found
  */
-abstract class Check[R, X](val what: Session => String, val how: ExtractorFactory[R, X], val strategy: CheckStrategy[X], val saveAs: Option[String]) {
+abstract class Check[R, X](val extractionExpression: Session => String, val extractorFactory: ExtractorFactory[R, X], val strategy: CheckStrategy[X], val saveAs: Option[String]) {
 
-	def check(response: R, s: Session) = strategy(how.getExtractor(response).extract(what(s)), s)
+	def check(response: R, s: Session) = {
+		val extractor = extractorFactory.getExtractor(response)
+		val extracted = extractor.extract(extractionExpression(s))
+		strategy(extracted, s)
+	}
 }
