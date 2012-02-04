@@ -52,7 +52,7 @@ and (select count(*) from usr_account where usr_id=id) >=2""")
 		.loop(
 			chain
 				.feed(testData)
-				.exec(http("Catégorie Poney").get("/").queryParam("omg").queryParam("socool").check(toHttpCheck(xpath("//input[@id='text1']/@value").find.exists.saveAs("aaaa_value")))))
+				.exec(http("Catégorie Poney").get("/").queryParam("omg").queryParam("socool").check(xpath("//input[@id='text1']/@value").find.exists.saveAs("aaaa_value"))))
 		.times(2)
 		.pause(pause2, pause3)
 		// Loop
