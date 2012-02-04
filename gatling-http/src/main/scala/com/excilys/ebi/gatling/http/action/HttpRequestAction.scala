@@ -78,8 +78,8 @@ object HttpRequestAction {
  * @param givenCheckBuilders all the checks that will be performed on the response
  * @param feeder the feeder that will be consumed each time the request will be sent
  */
-class HttpRequestAction(next: ActorRef, request: HttpRequest, givenCheckBuilders: Option[List[CheckWithVerifyBuilder[HttpCheck[_], Response, _]]], protocolConfiguration: Option[HttpProtocolConfiguration])
-		extends RequestAction[HttpCheck[_], Response, HttpProtocolConfiguration](next, request, givenCheckBuilders, protocolConfiguration) {
+class HttpRequestAction(next: ActorRef, request: HttpRequest, givenChecks: Option[List[HttpCheck[_]]], protocolConfiguration: Option[HttpProtocolConfiguration])
+		extends RequestAction[HttpCheck[_], Response, HttpProtocolConfiguration](next, request, givenChecks, protocolConfiguration) {
 
 	def addDefaultHttpStatusCheck(checks: List[HttpCheck[_]]) = {
 		if (checks.find(_.when == StatusReceived).isEmpty) {
@@ -90,7 +90,7 @@ class HttpRequestAction(next: ActorRef, request: HttpRequest, givenCheckBuilders
 		}
 	}
 
-	val checks = addDefaultHttpStatusCheck(givenCheckBuilders.map(_.map(_.build)).getOrElse(Nil))
+	val checks = addDefaultHttpStatusCheck(givenChecks.getOrElse(Nil))
 
 	def execute(session: Session) = {
 

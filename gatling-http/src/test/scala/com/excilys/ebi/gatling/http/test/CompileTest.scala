@@ -52,7 +52,7 @@ and (select count(*) from usr_account where usr_id=id) >=2""")
 		.loop(
 			chain
 				.feed(testData)
-				.exec(http("Catégorie Poney").get("/").queryParam("omg").queryParam("socool").check(xpath("//input[@id='text1']/@value").find.exists.saveAs("aaaa_value"))))
+				.exec(http("Catégorie Poney").get("/").queryParam("omg").queryParam("socool").check(xpath("//input[@id='text1']/@value").find.exists.saveAs("aaaa_value").build)))
 		.times(2)
 		.pause(pause2, pause3)
 		// Loop
@@ -67,13 +67,13 @@ and (select count(*) from usr_account where usr_id=id) >=2""")
 				.exec(
 					http("Page accueil").get("http://localhost:3000")
 						.check(
-							xpath("//input[@value='${aaaa_value}']/@id").exists.saveAs("sessionParam"),
-							xpath("//input[@id='${aaaa_value}']/@value").notExists,
-							regex("""<input id="text1" type="text" value="aaaa" />"""),
-							regex("""<input id="text1" type="test" value="aaaa" />""").notExists,
-							status.in(200 to 210) saveAs "blablaParam",
-							xpath("//input[@value='aaaa']/@id").neq("omg"),
-							xpath("//input[@id='text1']/@value") eq "aaaa" saveAs "test2"))
+							xpath("//input[@value='${aaaa_value}']/@id").find.exists.saveAs("sessionParam").build,
+							xpath("//input[@id='${aaaa_value}']/@value").find.notExists.build,
+							regex("""<input id="text1" type="text" value="aaaa" />""").find.exists.build,
+							regex("""<input id="text1" type="test" value="aaaa" />""").find.notExists.build,
+							status.find.in(200 to 210).saveAs("blablaParam").build,
+							xpath("//input[@value='aaaa']/@id").find.not("omg").build,
+							xpath("//input[@id='text1']/@value").find.is("aaaa").saveAs("test2").build))
 				.loop(chain
 					.exec(http("In During 1").get("http://localhost:3000/aaaa"))
 					.pause(2)
@@ -119,13 +119,13 @@ and (select count(*) from usr_account where usr_id=id) >=2""")
 				// Third request to be repeated
 				.exec(http("Liste Articles") get ("/things") queryParam "firstname" queryParam "lastname")
 				.pause(pause1)
-				.exec(http("Test Page") get ("/tests") check (header(CONTENT_TYPE).eq("text/html; charset=utf-8") saveAs "sessionParam"))
+				.exec(http("Test Page").get("/tests").check(header(CONTENT_TYPE).find.is("text/html; charset=utf-8").saveAs("sessionParam").build))
 				// Fourth request to be repeated
 				.exec(http("Create Thing omgomg")
 					.post("/things").queryParam("postTest", "${sessionParam}").fileBody("create_thing", Map("name" -> "${sessionParam}")).asJSON
-					.check(status.eq(201) saveAs "status"))).counterName("titi").times(iterations)
+					.check(status.find.is(201).saveAs("status").build))).counterName("titi").times(iterations)
 		// Second request outside iteration
-		.exec(http("Ajout au panier").get("/").check(regex("""<input id="text1" type="text" value="(.*)" />""").saveAs("input")))
+		.exec(http("Ajout au panier").get("/").check(regex("""<input id="text1" type="text" value="(.*)" />""").find.exists.saveAs("input").build))
 		.pause(pause1)
 
 	runSimulation(

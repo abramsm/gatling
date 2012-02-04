@@ -87,7 +87,7 @@ abstract class AbstractHttpRequestBuilder[B <: AbstractHttpRequestBuilder[B]](va
 	 *
 	 * @param checkBuilders the checks that will be performed on the reponse
 	 */
-	def check(checkBuilders: CheckWithVerifyBuilder[HttpCheck[_], Response, _]*) = httpRequestActionBuilder.withRequest(new HttpRequest(httpRequestActionBuilder.requestName, this)).withProcessors(checkBuilders)
+	def check(checks: HttpCheck[_]*) = httpRequestActionBuilder.withRequest(new HttpRequest(httpRequestActionBuilder.requestName, this)).withProcessors(checks)
 
 	/**
 	 * Adds a query parameter to the request
