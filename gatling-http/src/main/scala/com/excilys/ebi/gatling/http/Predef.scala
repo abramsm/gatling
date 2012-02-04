@@ -16,14 +16,15 @@
 package com.excilys.ebi.gatling.http
 
 import com.excilys.ebi.gatling.core.check.CheckWithVerifyBuilder
-import com.excilys.ebi.gatling.core.check.CheckStrategy
+import com.excilys.ebi.gatling.core.check.{CheckStrategy, CheckOneWithExtractorFactoryBuilder, CheckMultipleWithExtractorFactoryBuilder}
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.http.action.HttpRequestActionBuilder
-import com.excilys.ebi.gatling.http.check.body.{ HttpBodyXPathCheckBuilder, HttpBodyRegexCheckBuilder }
+import com.excilys.ebi.gatling.http.check.body.{HttpBodyXPathCheckBuilder, HttpBodyRegexCheckBuilder}
 import com.excilys.ebi.gatling.http.check.header.HttpHeaderCheckBuilder
 import com.excilys.ebi.gatling.http.check.status.HttpStatusCheckBuilder
-import com.excilys.ebi.gatling.http.config.{ HttpProxyBuilder, HttpProtocolConfigurationBuilder }
 import com.excilys.ebi.gatling.http.check.HttpCheck
+import com.excilys.ebi.gatling.http.check.HttpCheckBuilder
+import com.excilys.ebi.gatling.http.config.{HttpProxyBuilder, HttpProtocolConfigurationBuilder}
 import com.ning.http.client.Response
 
 object Predef {
@@ -36,7 +37,14 @@ object Predef {
 	implicit def stringToSessionFunction(s: String) = CheckStrategy.stringToSessionFunction(s)
 	implicit def toSessionFunction[X](x: X) = CheckStrategy.toSessionFunction(x)
 
-	implicit def toHttpCheck[X](builder: CheckWithVerifyBuilder[HttpCheck[X], Response, X]) = builder.build
+	implicit def httpCheckWithVerifyBuilderToHttpCheck[X](builder: CheckWithVerifyBuilder[HttpCheck[X], Response, X]) = builder.build
+	implicit def httpCheckOneToExists[X](builder: CheckOneWithExtractorFactoryBuilder[HttpCheck[X], Response, X]) = builder.exists
+	implicit def httpCheckOneToHttpCheck[X](builder: CheckOneWithExtractorFactoryBuilder[HttpCheck[X], Response, X]) = builder.exists.build
+	implicit def httpCheckMultipleToNotEmpty[X](builder: CheckMultipleWithExtractorFactoryBuilder[HttpCheck[List[X]], Response, List[X]]) = builder.notEmpty
+	implicit def httpCheckMultipleToHttpCheck[X](builder: CheckMultipleWithExtractorFactoryBuilder[HttpCheck[List[X]], Response, List[X]]) = builder.notEmpty.build
+	implicit def httpCheckBuilderToCheckOne[X](builder: HttpCheckBuilder[X]) = builder.find
+	implicit def httpCheckBuilderToExists[X](builder: HttpCheckBuilder[X]) = builder.find.exists
+	implicit def httpCheckBuilderToHttpCheck[X](builder: HttpCheckBuilder[X]) = builder.find.exists.build
 
 	def regex(what: Session => String) = HttpBodyRegexCheckBuilder.regex(what)
 	def regex(expression: String) = HttpBodyRegexCheckBuilder.regex(expression)
