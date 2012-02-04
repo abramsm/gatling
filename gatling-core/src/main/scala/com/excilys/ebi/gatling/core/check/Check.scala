@@ -30,7 +30,5 @@ import com.excilys.ebi.gatling.core.session.Session
  */
 abstract class Check[T, X](val what: Session => String, val how: ExtractorFactory[T, X], val strategy: CheckStrategy[X], val saveAs: Option[String]) {
 	
-	def resolve(s: Session, extractor: Extractor[_]) = {
-		new ResolvedCheck(what(s), extractor.asInstanceOf[Extractor[X]], strategy, saveAs)
-	}
+	def resolve(s: Session, extractor: Extractor[_]) = new ResolvedCheck(what(s), extractor.asInstanceOf[Extractor[X]], strategy, saveAs)
 }

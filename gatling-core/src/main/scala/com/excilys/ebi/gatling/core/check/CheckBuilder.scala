@@ -108,6 +108,18 @@ class CheckMultipleWithExtractorFactoryBuilder[C <: Check[R, X], R, X <: List[_]
 			case None => CheckResult(false, value, Some("Check 'empty' failed, found None"))
 		}
 	})
+	def is(expected: Session => X) = verify(new CheckStrategy[X] {
+		def apply(value: Option[X], s: Session) = value match {
+			case Some(extracted) => {
+				val expectedValue = expected(s)
+				if (extracted == expectedValue)
+					CheckResult(true, value)
+				else
+					CheckResult(false, value, Some("Check 'eq' failed, found " + extracted + " but expected " + expectedValue))
+			}
+			case None => CheckResult(false, value, Some("Check 'eq' failed, found nothing"))
+		}
+	})
 }
 
 trait CheckWithSaveAsBuilder[C <: Check[R, X], R, X] extends CheckWithVerifyBuilder[C, R, X] {
