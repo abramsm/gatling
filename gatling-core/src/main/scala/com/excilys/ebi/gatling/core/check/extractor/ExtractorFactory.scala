@@ -18,7 +18,7 @@ package com.excilys.ebi.gatling.core.check.extractor
 /**
  * This trait is used to define different types of Extractors
  */
-trait ExtractorFactory[R, X] {
+abstract class ExtractorFactory[R, +X] {
 
 	/**
 	 * Method that will generate the adequate Extractor

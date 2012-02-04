@@ -31,6 +31,6 @@ import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
  * @param expected the expected value against which the extracted value will be checked
  * @param when the HttpPhase during which the check will be made
  */
-abstract class HttpCheckBuilder(what: Session => String, val when: HttpPhase) extends CheckBuilder[Response] {
+abstract class HttpCheckBuilder[X](val what: Session => String, val when: HttpPhase) extends CheckBuilder[HttpCheck[X], Response, X] {
 	def checkBuildFunction[X] = (extractorFactory: ExtractorFactory[Response, X], strategy: CheckStrategy[X], saveAs: Option[String]) => new HttpCheck(what, extractorFactory, strategy, saveAs, when)
 }

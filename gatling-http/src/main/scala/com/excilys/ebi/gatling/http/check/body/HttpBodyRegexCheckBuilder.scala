@@ -25,6 +25,7 @@ import com.excilys.ebi.gatling.http.check.HttpCheck
 import com.excilys.ebi.gatling.http.check.HttpCheckBuilder
 import com.excilys.ebi.gatling.http.request.HttpPhase.CompletePageReceived
 import com.ning.http.client.Response
+import com.excilys.ebi.gatling.http.check.HttpMultipleCheckBuilder
 
 object HttpBodyRegexCheckBuilder {
 
@@ -41,7 +42,7 @@ object HttpBodyRegexCheckBuilder {
  * @param expected the expected value against which the extracted value will be checked
  * @param saveAs the optional session key in which the extracted value will be stored
  */
-class HttpBodyRegexCheckBuilder(what: Session => String) extends HttpCheckBuilder(what, CompletePageReceived) with MultipleOccurence[Response] {
+class HttpBodyRegexCheckBuilder(what: Session => String) extends HttpMultipleCheckBuilder[String](what, CompletePageReceived) {
 	
 	def find: CheckOneWithExtractorFactoryBuilder[HttpCheck[String], Response, String] = find(0)
 

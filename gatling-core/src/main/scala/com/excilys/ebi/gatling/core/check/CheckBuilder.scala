@@ -18,16 +18,15 @@ package com.excilys.ebi.gatling.core.check
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
 
-trait CheckBuilder[R] {
-	def checkBuilderFunction[C <: Check[R, X], R, X](extractorFactory: ExtractorFactory[R, X], strategy: CheckStrategy[X], saveAs: Option[String]): C
-	def find[C <: Check[R, X], X]: CheckOneWithExtractorFactoryBuilder[C, R, X]
+trait CheckBuilder[C <: Check[R, X], R, X] {
+	def find: CheckOneWithExtractorFactoryBuilder[C, R, X]
 }
 
-trait MultipleOccurence[R] extends CheckBuilder[R] {
+trait MultipleOccurence[C <: Check[R, X], CM <: Check[R, List[X]], R, X] extends CheckBuilder[C, R, X] {
 
-	def find[C <: Check[R, X], X](occurrence: Int): CheckOneWithExtractorFactoryBuilder[C, R, X]
+	def find(occurrence: Int): CheckOneWithExtractorFactoryBuilder[C, R, X]
 
-	def findAll[C <: Check[R, X], X <: List[_]]: CheckMultipleWithExtractorFactoryBuilder[C, R, X]
+	def findAll: CheckMultipleWithExtractorFactoryBuilder[CM, R, List[X]]
 
 	// TODO
 	//	def count: CheckWithExtractoryFactoryBuilder[R, Int]

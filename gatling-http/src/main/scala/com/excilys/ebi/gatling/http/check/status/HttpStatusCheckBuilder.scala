@@ -41,16 +41,11 @@ object HttpStatusCheckBuilder {
  * @param strategy the strategy used to check
  * @param expected the expected value against which the extracted value will be checked
  */
-class HttpStatusCheckBuilder extends HttpCheckBuilder(Session => EMPTY, StatusReceived) {
+class HttpStatusCheckBuilder extends HttpCheckBuilder[Int](Session => EMPTY, StatusReceived) {
 
-	private def singleOccurenceHttpStatusExtractorFactory = new ExtractorFactory[Response, Int] {
+	def find = new CheckOneWithExtractorFactoryBuilder[HttpCheck[Int], Response, Int](checkBuildFunction[Int], new ExtractorFactory[Response, Int] {
 		def getExtractor(response: Response) = new Extractor[Int] {
 			def extract(expression: String) = Some(response.getStatusCode)
 		}
-	}
-
-	def find: CheckOneWithExtractorFactoryBuilder[HttpCheck[Int], Response, Int] = {
-
-		new CheckOneWithExtractorFactoryBuilder(checkBuildFunction[Int], singleOccurenceHttpStatusExtractorFactory)
-	}
+	})
 }

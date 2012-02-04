@@ -16,7 +16,6 @@
 package com.excilys.ebi.gatling.http.check.header
 
 import scala.collection.JavaConversions.asScalaIterable
-
 import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
 import com.excilys.ebi.gatling.core.check.extractor.Extractor
 import com.excilys.ebi.gatling.core.check.MultipleOccurence
@@ -27,6 +26,7 @@ import com.excilys.ebi.gatling.http.check.HttpCheck
 import com.excilys.ebi.gatling.http.check.HttpCheckBuilder
 import com.excilys.ebi.gatling.http.request.HttpPhase.HeadersReceived
 import com.ning.http.client.Response
+import com.excilys.ebi.gatling.http.check.HttpMultipleCheckBuilder
 
 /**
  * HttpHeaderCheckBuilder class companion
@@ -57,9 +57,11 @@ object HttpHeaderCheckBuilder {
  * @param strategy the strategy used to check
  * @param expected the expected value against which the extracted value will be checked
  */
-class HttpHeaderCheckBuilder(what: Session => String) extends HttpCheckBuilder(what, HeadersReceived) with MultipleOccurence[Response] {
+class HttpHeaderCheckBuilder(what: Session => String) extends HttpMultipleCheckBuilder[String](what, HeadersReceived) {
 
-	private def singleOccurenceHttpHeaderExtractorFactory(occurrence: Int) = new ExtractorFactory[Response, String] {
+	def find: CheckOneWithExtractorFactoryBuilder[HttpCheck[String], Response, String] = find(0)
+
+	def find(occurrence: Int) = new CheckOneWithExtractorFactoryBuilder(checkBuildFunction[String], new ExtractorFactory[Response, String] {
 		def getExtractor(response: Response) = new Extractor[String] {
 			def extract(expression: String): Option[String] = {
 				val headers = response.getHeaders(expression)
@@ -70,18 +72,12 @@ class HttpHeaderCheckBuilder(what: Session => String) extends HttpCheckBuilder(w
 				}
 			}
 		}
-	}
+	})
 
-	private val multipleOccurenceHttpHeaderExtractorFactory = new ExtractorFactory[Response, List[String]] {
+	def findAll = new CheckMultipleWithExtractorFactoryBuilder(checkBuildFunction[List[String]], new ExtractorFactory[Response, List[String]] {
 		def getExtractor(response: Response) = new Extractor[List[String]] {
 			def extract(expression: String) = asScalaIterable(response.getHeaders(expression)).toList
 		}
-	}
-
-	def find: CheckOneWithExtractorFactoryBuilder[HttpCheck[String], Response, String] = find(0)
-
-	def find(occurence: Int) = new CheckOneWithExtractorFactoryBuilder(checkBuildFunction[String], singleOccurenceHttpHeaderExtractorFactory(occurence))
-
-	def findAll = new CheckMultipleWithExtractorFactoryBuilder(checkBuildFunction[List[String]], multipleOccurenceHttpHeaderExtractorFactory)
+	})
 }
 
