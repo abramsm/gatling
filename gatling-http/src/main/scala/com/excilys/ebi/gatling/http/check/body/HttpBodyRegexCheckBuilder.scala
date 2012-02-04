@@ -15,23 +15,22 @@
  */
 package com.excilys.ebi.gatling.http.check.body
 
-import com.excilys.ebi.gatling.core.check.{ CheckBuilderVerifyOne, CheckBuilderFind }
-import com.excilys.ebi.gatling.core.check.{ CheckBuilderVerifyAll, CheckBuilderVerify, CheckBuilderSave }
+import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
+import com.excilys.ebi.gatling.core.check.extractor.{ RegexExtractor, MultiRegexExtractor }
+import com.excilys.ebi.gatling.core.check.MultipleOccurence
+import com.excilys.ebi.gatling.core.check.{ CheckOneWithExtractorFactoryBuilder, CheckMultipleWithExtractorFactoryBuilder }
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.core.util.StringHelper.interpolate
-import com.excilys.ebi.gatling.http.check.{ HttpCheckBuilder, HttpCheck }
-import com.excilys.ebi.gatling.http.request.HttpPhase.{ HttpPhase, CompletePageReceived }
-import com.excilys.ebi.gatling.core.check.CheckStrategy
+import com.excilys.ebi.gatling.http.check.HttpCheck
+import com.excilys.ebi.gatling.http.check.HttpCheckBuilder
+import com.excilys.ebi.gatling.http.request.HttpPhase.CompletePageReceived
+import com.ning.http.client.Response
 
 object HttpBodyRegexCheckBuilder {
-	/**
-	 *
-	 */
-	def regex(what: Session => String) = new HttpBodyRegexCheckBuilder(what, Some(0), CheckBuilderVerify.exists, Nil, None) with CheckBuilderFind[HttpCheckBuilder[HttpBodyRegexCheckBuilder]]
-	/**
-	 *
-	 */
-	def regex(expression: String): HttpBodyRegexCheckBuilder with CheckBuilderFind[HttpCheckBuilder[HttpBodyRegexCheckBuilder]] = regex(interpolate(expression))
+
+	def regex(what: Session => String) = new HttpBodyRegexCheckBuilder(what)
+
+	def regex(expression: String): HttpBodyRegexCheckBuilder = regex(interpolate(expression))
 }
 
 /**
@@ -42,20 +41,15 @@ object HttpBodyRegexCheckBuilder {
  * @param expected the expected value against which the extracted value will be checked
  * @param saveAs the optional session key in which the extracted value will be stored
  */
-class HttpBodyRegexCheckBuilder(what: Session => String, occurrence: Option[Int], strategy: CheckStrategy, expected: List[Session => String], saveAs: Option[String])
-		extends HttpCheckBuilder[HttpBodyRegexCheckBuilder](what, occurrence, strategy, expected, saveAs, CompletePageReceived) {
+class HttpBodyRegexCheckBuilder(what: Session => String) extends HttpCheckBuilder(what, CompletePageReceived) with MultipleOccurence[Response] {
+	
+	def find: CheckOneWithExtractorFactoryBuilder[HttpCheck[String], Response, String] = find(0)
 
-	def newInstance(what: Session => String, occurrence: Option[Int], strategy: CheckStrategy, expected: List[Session => String], saveAs: Option[String], when: HttpPhase) =
-		new HttpBodyRegexCheckBuilder(what, occurrence, strategy, expected, saveAs)
+	def find(occurence: Int) = new CheckOneWithExtractorFactoryBuilder(checkBuildFunction[String], new ExtractorFactory[Response, String] {
+		def getExtractor(response: Response) = new RegexExtractor(response.getResponseBody, occurence)
+	})
 
-	def newInstanceWithFindOne(occurrence: Int) =
-		new HttpBodyRegexCheckBuilder(what, Some(occurrence), strategy, expected, saveAs) with CheckBuilderVerifyOne[HttpCheckBuilder[HttpBodyRegexCheckBuilder]]
-
-	def newInstanceWithFindAll =
-		new HttpBodyRegexCheckBuilder(what, None, strategy, expected, saveAs) with CheckBuilderVerifyAll[HttpCheckBuilder[HttpBodyRegexCheckBuilder]]
-
-	def newInstanceWithVerify(strategy: CheckStrategy, expected: List[Session => String] = Nil) =
-		new HttpBodyRegexCheckBuilder(what, occurrence, strategy, expected, saveAs) with CheckBuilderSave[HttpCheckBuilder[HttpBodyRegexCheckBuilder]]
-
-	private[gatling] def build: HttpCheck = new HttpBodyRegexCheck(what, occurrence, strategy, expected, saveAs: Option[String])
+	def findAll = new CheckMultipleWithExtractorFactoryBuilder(checkBuildFunction[List[String]], new ExtractorFactory[Response, List[String]] {
+		def getExtractor(response: Response) = new MultiRegexExtractor(response.getResponseBody)
+	})
 }

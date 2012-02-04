@@ -16,10 +16,8 @@
 package com.excilys.ebi.gatling.core.check
 
 import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
-import com.excilys.ebi.gatling.core.log.Logging
+import com.excilys.ebi.gatling.core.check.extractor.Extractor
 import com.excilys.ebi.gatling.core.session.Session
-import com.excilys.ebi.gatling.core.util.ClassSimpleNameToString
-import com.excilys.ebi.gatling.core.util.StringHelper.EMPTY
 
 /**
  * This class represents a Check
@@ -30,6 +28,9 @@ import com.excilys.ebi.gatling.core.util.StringHelper.EMPTY
  * @param strategy the strategy used to perform the Check
  * @param expected the expected value of what has been found
  */
-abstract class Check[T](val what: Session => String, val how: ExtractorFactory[T], val strategy: CheckStrategy, val expected: List[Session => String], val saveAs: Option[String])
-	extends Logging with ClassSimpleNameToString
-
+abstract class Check[T, X](val what: Session => String, val how: ExtractorFactory[T, X], val strategy: CheckStrategy[X], val saveAs: Option[String]) {
+	
+	def resolve(s: Session, extractor: Extractor[_]) = {
+		new ResolvedCheck(what(s), extractor.asInstanceOf[Extractor[X]], strategy, saveAs)
+	}
+}

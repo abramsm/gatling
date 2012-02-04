@@ -15,7 +15,10 @@
  */
 package com.excilys.ebi.gatling.core.check.extractor
 
-class MultiRegexExtractor(textContent: String) extends Extractor with MultiValuedExtractor {
+import com.excilys.ebi.gatling.core.log.Logging
+
+class MultiRegexExtractor(textContent: String) extends Extractor[List[String]] with Logging {
+
 	/**
 	 * The actual extraction happens here. The regular expression is compiled and the occurrence-th
 	 * result is returned if existing.
@@ -23,7 +26,7 @@ class MultiRegexExtractor(textContent: String) extends Extractor with MultiValue
 	 * @param expression a String containing the regular expression to be matched
 	 * @return an option containing the value if found, None otherwise
 	 */
-	def extract(expression: String): List[String] = {
+	def extract(expression: String) = {
 		logger.debug("Extracting with expression : {}", expression)
 
 		expression.r.findAllIn(textContent).matchData.map { matcher =>

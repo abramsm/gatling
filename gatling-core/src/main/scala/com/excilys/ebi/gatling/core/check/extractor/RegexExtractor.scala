@@ -16,6 +16,7 @@
 package com.excilys.ebi.gatling.core.check.extractor
 
 import java.util.regex.Pattern
+import com.excilys.ebi.gatling.core.log.Logging
 
 /**
  * This class is a built-in extractor that helps searching with Regular Expressions
@@ -24,7 +25,7 @@ import java.util.regex.Pattern
  * @param textContent the text where the search will be made
  * @param occurence the occurrence of the result that should be returned
  */
-class RegexExtractor(textContent: String, occurrence: Int) extends Extractor {
+class RegexExtractor(textContent: String, occurrence: Int) extends Extractor[String] with Logging {
 	/**
 	 * The actual extraction happens here. The regular expression is compiled and the occurrence-th
 	 * result is returned if existing.
@@ -32,17 +33,17 @@ class RegexExtractor(textContent: String, occurrence: Int) extends Extractor {
 	 * @param expression a String containing the regular expression to be matched
 	 * @return an option containing the value if found, None otherwise
 	 */
-	def extract(expression: String): List[String] = {
+	def extract(expression: String): Option[String] = {
 		logger.debug("Extracting with expression : {}", expression)
 
 		val matcher = Pattern.compile(expression).matcher(textContent)
 
 		for (i <- 0 to occurrence) {
 			if (!matcher.find)
-				return Nil
+				return None
 		}
 
 		// if a group is specified, return the group 1, else return group 0 (ie the match)
-		List(new String(matcher.group(matcher.groupCount min 1)))
+		new String(matcher.group(matcher.groupCount min 1))
 	}
 }

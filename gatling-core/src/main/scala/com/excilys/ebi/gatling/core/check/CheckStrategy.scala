@@ -15,7 +15,15 @@
  */
 package com.excilys.ebi.gatling.core.check
 
-trait CheckStrategy {
+import com.excilys.ebi.gatling.core.util.StringHelper._
+import com.excilys.ebi.gatling.core.session.Session
 
-	def apply(value: List[String], expected: List[String]): Boolean
+object CheckStrategy {
+
+	implicit def stringToSessionFunction(s: String) = interpolate(s)
+	implicit def toSessionFunction[X](x: X) = (s: Session) => x
+}
+
+trait CheckStrategy[X] {
+	def apply(value: Option[X], s: Session): CheckResult[X]
 }

@@ -15,12 +15,18 @@
  */
 package com.excilys.ebi.gatling.http.check.header
 
-import com.excilys.ebi.gatling.core.check.{CheckBuilderVerifyOne, CheckBuilderFind}
-import com.excilys.ebi.gatling.core.check.{CheckStrategy, CheckBuilderVerify, CheckBuilderSave}
+import scala.collection.JavaConversions.asScalaIterable
+
+import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
+import com.excilys.ebi.gatling.core.check.extractor.Extractor
+import com.excilys.ebi.gatling.core.check.MultipleOccurence
+import com.excilys.ebi.gatling.core.check.{ CheckOneWithExtractorFactoryBuilder, CheckMultipleWithExtractorFactoryBuilder }
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.core.util.StringHelper.interpolate
-import com.excilys.ebi.gatling.http.check.{HttpCheckBuilder, HttpCheck}
-import com.excilys.ebi.gatling.http.request.HttpPhase.{HttpPhase, HeadersReceived}
+import com.excilys.ebi.gatling.http.check.HttpCheck
+import com.excilys.ebi.gatling.http.check.HttpCheckBuilder
+import com.excilys.ebi.gatling.http.request.HttpPhase.HeadersReceived
+import com.ning.http.client.Response
 
 /**
  * HttpHeaderCheckBuilder class companion
@@ -28,18 +34,19 @@ import com.excilys.ebi.gatling.http.request.HttpPhase.{HttpPhase, HeadersReceive
  * It contains DSL definitions
  */
 object HttpHeaderCheckBuilder {
+
 	/**
 	 * Will check the value of the header in the session
 	 *
 	 * @param what the function returning the name of the header
 	 */
-	def header(what: Session => String) = new HttpHeaderCheckBuilder(what, CheckBuilderVerify.exists, Nil, None) with CheckBuilderFind[HttpCheckBuilder[HttpHeaderCheckBuilder]]
+	def header(what: Session => String) = new HttpHeaderCheckBuilder(what)
 	/**
 	 * Will check the value of the header in the session
 	 *
 	 * @param headerName the name of the header
 	 */
-	def header(headerName: String): HttpHeaderCheckBuilder with CheckBuilderFind[HttpCheckBuilder[HttpHeaderCheckBuilder]] = header(interpolate(headerName))
+	def header(headerName: String): HttpHeaderCheckBuilder = header(interpolate(headerName))
 }
 
 /**
@@ -50,19 +57,31 @@ object HttpHeaderCheckBuilder {
  * @param strategy the strategy used to check
  * @param expected the expected value against which the extracted value will be checked
  */
-class HttpHeaderCheckBuilder(what: Session => String, strategy: CheckStrategy, expected: List[Session => String], saveAs: Option[String])
-		extends HttpCheckBuilder[HttpHeaderCheckBuilder](what, None, strategy, expected, saveAs, HeadersReceived) {
+class HttpHeaderCheckBuilder(what: Session => String) extends HttpCheckBuilder(what, HeadersReceived) with MultipleOccurence[Response] {
 
-	private[http] def newInstance(what: Session => String, occurrence: Option[Int], strategy: CheckStrategy, expected: List[Session => String], saveAs: Option[String], when: HttpPhase) =
-		new HttpHeaderCheckBuilder(what, strategy, expected, saveAs)
+	private def singleOccurenceHttpHeaderExtractorFactory(occurrence: Int) = new ExtractorFactory[Response, String] {
+		def getExtractor(response: Response) = new Extractor[String] {
+			def extract(expression: String): Option[String] = {
+				val headers = response.getHeaders(expression)
+				if (headers.size > occurrence) {
+					Some(headers.get(occurrence))
+				} else {
+					None
+				}
+			}
+		}
+	}
 
-	private[gatling] def newInstanceWithFindOne(occurrence: Int) =
-		new HttpHeaderCheckBuilder(what, strategy, expected, saveAs) with CheckBuilderVerifyOne[HttpCheckBuilder[HttpHeaderCheckBuilder]]
+	private val multipleOccurenceHttpHeaderExtractorFactory = new ExtractorFactory[Response, List[String]] {
+		def getExtractor(response: Response) = new Extractor[List[String]] {
+			def extract(expression: String) = asScalaIterable(response.getHeaders(expression)).toList
+		}
+	}
 
-	private[gatling] def newInstanceWithFindAll = throw new UnsupportedOperationException("Header checks are single valued")
+	def find: CheckOneWithExtractorFactoryBuilder[HttpCheck[String], Response, String] = find(0)
 
-	private[gatling] def newInstanceWithVerify(strategy: CheckStrategy, expected: List[Session => String] = Nil) =
-		new HttpHeaderCheckBuilder(what, strategy, expected, saveAs) with CheckBuilderSave[HttpCheckBuilder[HttpHeaderCheckBuilder]]
+	def find(occurence: Int) = new CheckOneWithExtractorFactoryBuilder(checkBuildFunction[String], singleOccurenceHttpHeaderExtractorFactory(occurence))
 
-	private[gatling] def build: HttpCheck = new HttpHeaderCheck(what, strategy, expected, saveAs)
+	def findAll = new CheckMultipleWithExtractorFactoryBuilder(checkBuildFunction[List[String]], multipleOccurenceHttpHeaderExtractorFactory)
 }
+

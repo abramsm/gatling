@@ -31,6 +31,9 @@ import com.excilys.ebi.gatling.http.check.HttpCheckBuilder
 import akka.actor.ActorRef
 import com.excilys.ebi.gatling.core.config.ProtocolConfigurationRegistry
 import com.excilys.ebi.gatling.http.config.HttpProtocolConfiguration
+import com.excilys.ebi.gatling.core.check.CheckWithVerifyBuilder
+import com.excilys.ebi.gatling.http.check.HttpCheck
+import com.ning.http.client.Response
 
 /**
  * HttpRequestActionBuilder class companion
@@ -51,7 +54,7 @@ object HttpRequestActionBuilder {
  * @param next the next action to be executed
  * @param processorBuilders
  */
-class HttpRequestActionBuilder(val requestName: String, request: HttpRequest, next: ActorRef, processorBuilders: Option[List[HttpCheckBuilder[_]]])
+class HttpRequestActionBuilder(val requestName: String, request: HttpRequest, next: ActorRef, processorBuilders: Option[List[CheckWithVerifyBuilder[HttpCheck[_], Response, _]]])
 		extends AbstractActionBuilder {
 
 	/**
@@ -60,7 +63,7 @@ class HttpRequestActionBuilder(val requestName: String, request: HttpRequest, ne
 	 * @param givenProcessors the processors specified by the user
 	 * @return a new builder with givenProcessors set
 	 */
-	private[http] def withProcessors(givenProcessors: Seq[HttpCheckBuilder[_]]) = {
+	private[http] def withProcessors(givenProcessors: Seq[CheckWithVerifyBuilder[HttpCheck[_], Response, _]]) = {
 		new HttpRequestActionBuilder(requestName, request, next, Some(givenProcessors.toList ::: processorBuilders.getOrElse(Nil)))
 	}
 

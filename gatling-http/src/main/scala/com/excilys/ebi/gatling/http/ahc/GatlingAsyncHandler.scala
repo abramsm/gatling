@@ -34,8 +34,7 @@ import com.excilys.ebi.gatling.http.request.HttpPhase
 import com.excilys.ebi.gatling.http.util.HttpHelper.COOKIES_CONTEXT_KEY
 import com.ning.http.client.AsyncHandler.STATE
 import com.ning.http.client.Response.ResponseBuilder
-import com.ning.http.client.ProgressAsyncHandler
-import com.ning.http.client.{Response, HttpResponseStatus, HttpResponseHeaders, HttpResponseBodyPart, Cookie, AsyncHandler}
+import com.ning.http.client.{ProgressAsyncHandler, Response, HttpResponseStatus, HttpResponseHeaders, HttpResponseBodyPart, Cookie, AsyncHandler}
 import com.ning.http.util.AsyncHttpProviderUtils.parseCookie
 
 import akka.actor.ActorRef
@@ -51,7 +50,7 @@ import akka.actor.ActorRef
  * @param next the next action to be executed
  * @param requestName the name of the request
  */
-class GatlingAsyncHandler(session: Session, checks: List[HttpCheck], next: ActorRef, requestName: String)
+class GatlingAsyncHandler(session: Session, checks: List[HttpCheck[_]], next: ActorRef, requestName: String)
 		extends AsyncHandler[Void] with ProgressAsyncHandler[Void] with Logging {
 
 	private val identifier = requestName + session.userId

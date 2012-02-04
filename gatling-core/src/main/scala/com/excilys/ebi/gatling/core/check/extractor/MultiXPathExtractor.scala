@@ -23,7 +23,9 @@ import org.jaxen.dom.DOMXPath
 import org.jaxen.XPath
 import org.w3c.dom.Node
 
-class MultiXPathExtractor(xmlContent: InputStream) extends Extractor with MultiValuedExtractor {
+import com.excilys.ebi.gatling.core.log.Logging
+
+class MultiXPathExtractor(xmlContent: InputStream) extends Extractor[List[String]] with Logging {
 
 	// parses the document in the constructor so that the extractor can be efficiently reused for multiple extractions
 	val document = XPathExtractor.parser.parse(xmlContent)
@@ -35,7 +37,7 @@ class MultiXPathExtractor(xmlContent: InputStream) extends Extractor with MultiV
 	 * @param expression a String containing the XPath expression to be searched
 	 * @return an option containing the value if found, None otherwise
 	 */
-	def extract(expression: String): List[String] = {
+	def extract(expression: String) = {
 
 		val xpathExpression: XPath = new DOMXPath(expression);
 
