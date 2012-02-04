@@ -16,19 +16,14 @@
 package com.excilys.ebi.gatling.core.check.extractor
 
 import java.io.InputStream
-
 import scala.collection.JavaConversions.asScalaBuffer
-
 import org.jaxen.dom.DOMXPath
 import org.jaxen.XPath
 import org.w3c.dom.Node
-
 import com.excilys.ebi.gatling.core.log.Logging
+import org.w3c.dom.Document
 
-class MultiXPathExtractor(xmlContent: InputStream) extends Extractor[List[String]] with Logging {
-
-	// parses the document in the constructor so that the extractor can be efficiently reused for multiple extractions
-	val document = XPathExtractor.parser.parse(xmlContent)
+class MultiXPathExtractor(document: Document) extends Extractor[List[String]] with Logging {
 
 	/**
 	 * The actual extraction happens here. The XPath expression is searched for and the occurrence-th

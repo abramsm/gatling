@@ -21,7 +21,7 @@ import java.lang.Void
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.immutable.HashMap
 
-import com.excilys.ebi.gatling.core.check.ResolvedCheck.resolveAndApplyChecks
+import com.excilys.ebi.gatling.core.check.Check.applyChecks
 import com.excilys.ebi.gatling.core.log.Logging
 import com.excilys.ebi.gatling.core.result.message.ResultStatus.{ResultStatus, OK, KO}
 import com.excilys.ebi.gatling.core.result.message.ActionInfo
@@ -159,7 +159,7 @@ class GatlingAsyncHandler(session: Session, checks: List[HttpCheck[_]], next: Ac
 		HttpPhase.values.foreach { httpPhase =>
 			val phaseChecks = getChecksForPhase(httpPhase)
 			if (!phaseChecks.isEmpty) {
-				var (newSessionWithSavedValues, checkResult) = resolveAndApplyChecks(newSession, response, phaseChecks)
+				var (newSessionWithSavedValues, checkResult) = applyChecks(newSession, response, phaseChecks)
 				newSession = newSessionWithSavedValues
 
 				if (!checkResult.ok) {

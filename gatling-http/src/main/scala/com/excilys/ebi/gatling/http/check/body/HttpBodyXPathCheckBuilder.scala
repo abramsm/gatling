@@ -26,8 +26,12 @@ import com.excilys.ebi.gatling.http.check.HttpCheckBuilder
 import com.excilys.ebi.gatling.http.request.HttpPhase.CompletePageReceived
 import com.ning.http.client.Response
 import com.excilys.ebi.gatling.http.check.HttpMultipleCheckBuilder
+import com.excilys.ebi.gatling.core.check.CheckContextAware
+import HttpBodyXPathCheckBuilder.HTTP_RESPONSE_BODY_DOCUMENT_CHECK_CONTEXT_KEY
 
 object HttpBodyXPathCheckBuilder {
+
+	val HTTP_RESPONSE_BODY_DOCUMENT_CHECK_CONTEXT_KEY = "httpResponseBodyDocument"
 
 	def xpath(what: Session => String) = new HttpBodyXPathCheckBuilder(what)
 
@@ -46,11 +50,21 @@ class HttpBodyXPathCheckBuilder(what: Session => String) extends HttpMultipleChe
 
 	def find: CheckOneWithExtractorFactoryBuilder[HttpCheck[String], Response, String] = find(0)
 
-	def find(occurence: Int) = new CheckOneWithExtractorFactoryBuilder(checkBuildFunction[String], new ExtractorFactory[Response, String] {
-		def getExtractor(response: Response) = new XPathExtractor(response.getResponseBodyAsStream, occurence)
+	def find(occurence: Int) = new CheckOneWithExtractorFactoryBuilder(checkBuildFunction[String], new ExtractorFactory[Response, String] with CheckContextAware {
+		def getExtractor(response: Response) = {
+			val responseBody = getCheckContextAttribute(HTTP_RESPONSE_BODY_DOCUMENT_CHECK_CONTEXT_KEY).getOrElse {
+				setAndReturnCheckContextAttribute(HTTP_RESPONSE_BODY_DOCUMENT_CHECK_CONTEXT_KEY, XPathExtractor.parser.parse(response.getResponseBodyAsStream))
+			}
+			new XPathExtractor(responseBody, occurence)
+		}
 	})
 
-	def findAll = new CheckMultipleWithExtractorFactoryBuilder(checkBuildFunction[List[String]], new ExtractorFactory[Response, List[String]] {
-		def getExtractor(response: Response) = new MultiXPathExtractor(response.getResponseBodyAsStream)
+	def findAll = new CheckMultipleWithExtractorFactoryBuilder(checkBuildFunction[List[String]], new ExtractorFactory[Response, List[String]] with CheckContextAware {
+		def getExtractor(response: Response) = {
+			val responseBody = getCheckContextAttribute(HTTP_RESPONSE_BODY_DOCUMENT_CHECK_CONTEXT_KEY).getOrElse {
+				setAndReturnCheckContextAttribute(HTTP_RESPONSE_BODY_DOCUMENT_CHECK_CONTEXT_KEY, XPathExtractor.parser.parse(response.getResponseBodyAsStream))
+			}
+			new MultiXPathExtractor(responseBody)
+		}
 	})
 }

@@ -18,6 +18,27 @@ package com.excilys.ebi.gatling.core.check
 import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
 import com.excilys.ebi.gatling.core.check.extractor.Extractor
 import com.excilys.ebi.gatling.core.session.Session
+import CheckContext.performChecks
+
+object Check {
+	def applyChecks[R](s: Session, response: R, checks: List[Check[R, _]]): (Session, CheckResult[_]) = {
+
+		var newSession = s
+		var lastCheckResult: CheckResult[_] = null
+
+		performChecks {
+			for (check <- checks) {
+				lastCheckResult = check.check(response, s)
+				if (!lastCheckResult.ok)
+					return (newSession, lastCheckResult)
+				else if (check.saveAs.isDefined)
+					newSession = newSession.setAttribute(check.saveAs.get, lastCheckResult.extractedValue.get)
+			}
+		}
+
+		(newSession, lastCheckResult)
+	}
+}
 
 /**
  * This class represents a Check
@@ -28,7 +49,7 @@ import com.excilys.ebi.gatling.core.session.Session
  * @param strategy the strategy used to perform the Check
  * @param expected the expected value of what has been found
  */
-abstract class Check[T, X](val what: Session => String, val how: ExtractorFactory[T, X], val strategy: CheckStrategy[X], val saveAs: Option[String]) {
-	
-	def resolve(s: Session, extractor: Extractor[_]) = new ResolvedCheck(what(s), extractor.asInstanceOf[Extractor[X]], strategy, saveAs)
+abstract class Check[R, X](val what: Session => String, val how: ExtractorFactory[R, X], val strategy: CheckStrategy[X], val saveAs: Option[String]) {
+
+	def check(response: R, s: Session) = strategy(how.getExtractor(response).extract(what(s)), s)
 }
