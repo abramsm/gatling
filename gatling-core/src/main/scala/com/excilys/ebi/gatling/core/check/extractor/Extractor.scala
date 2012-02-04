@@ -21,7 +21,7 @@ package com.excilys.ebi.gatling.core.check.extractor
  * Extractors are objects responsible for extracting elements in others
  * Typically, we can think of Regular Expressions.
  */
-abstract class Extractor[+X] {
+abstract class Extractor[X] {
 
 	/**
 	 * this method does the actual extraction of what is designed by the expression
