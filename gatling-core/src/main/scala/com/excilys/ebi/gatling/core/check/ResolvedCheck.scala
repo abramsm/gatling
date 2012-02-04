@@ -48,12 +48,10 @@ object ResolvedCheck {
 
 		for (resolvedCheck <- resolvedChecks) {
 			lastCheckResult = resolvedCheck.check(s)
-			if (!lastCheckResult.ok) {
+			if (!lastCheckResult.ok)
 				return (newSession, lastCheckResult)
-
-			} else if (resolvedCheck.saveAs.isDefined) {
-				newSession = newSession.setAttribute(resolvedCheck.saveAs.get, lastCheckResult.extractedValue)
-			}
+			else if (resolvedCheck.saveAs.isDefined)
+				newSession = newSession.setAttribute(resolvedCheck.saveAs.get, lastCheckResult.extractedValue.get)
 		}
 
 		(newSession, lastCheckResult)
