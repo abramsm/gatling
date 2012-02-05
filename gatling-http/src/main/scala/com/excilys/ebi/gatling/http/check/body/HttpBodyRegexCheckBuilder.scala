@@ -15,13 +15,14 @@
  */
 package com.excilys.ebi.gatling.http.check.body
 
-import com.excilys.ebi.gatling.core.check.CheckContext.{setAndReturnCheckContextAttribute, getCheckContextAttribute}
+import com.excilys.ebi.gatling.core.check.CheckContext.{ setAndReturnCheckContextAttribute, getCheckContextAttribute }
 import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
-import com.excilys.ebi.gatling.core.check.extractor.{RegexExtractor, MultiRegexExtractor}
-import com.excilys.ebi.gatling.core.check.{CheckOneWithExtractorFactoryBuilder, CheckMultipleWithExtractorFactoryBuilder}
+import com.excilys.ebi.gatling.core.check.extractor.{ RegexExtractor, MultiRegexExtractor }
+import com.excilys.ebi.gatling.core.check.CheckOneBuilder
+import com.excilys.ebi.gatling.core.check.CheckMultipleBuilder
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.core.util.StringHelper.interpolate
-import com.excilys.ebi.gatling.http.check.{HttpMultipleCheckBuilder, HttpCheck}
+import com.excilys.ebi.gatling.http.check.{ HttpMultipleCheckBuilder, HttpCheck }
 import com.excilys.ebi.gatling.http.request.HttpPhase.CompletePageReceived
 import com.ning.http.client.Response
 
@@ -46,17 +47,17 @@ object HttpBodyRegexCheckBuilder {
  */
 class HttpBodyRegexCheckBuilder(what: Session => String) extends HttpMultipleCheckBuilder[String](what, CompletePageReceived) {
 
-	def find: CheckOneWithExtractorFactoryBuilder[HttpCheck[String], Response, String] = find(0)
+	def find: CheckOneBuilder[HttpCheck[String], Response, String] = find(0)
 
 	def getResponseBody(response: Response) = getCheckContextAttribute(HTTP_RESPONSE_BODY_CHECK_CONTEXT_KEY).getOrElse {
 		setAndReturnCheckContextAttribute(HTTP_RESPONSE_BODY_CHECK_CONTEXT_KEY, response.getResponseBody)
 	}
 
-	def find(occurence: Int) = new CheckOneWithExtractorFactoryBuilder(checkBuildFunction[String], new ExtractorFactory[Response, String] {
+	def find(occurence: Int) = new CheckOneBuilder(checkBuildFunction[String], new ExtractorFactory[Response, String] {
 		def getExtractor(response: Response) = new RegexExtractor(getResponseBody(response), occurence)
 	})
 
-	def findAll = new CheckMultipleWithExtractorFactoryBuilder(checkBuildFunction[List[String]], new ExtractorFactory[Response, List[String]] {
+	def findAll = new CheckMultipleBuilder(checkBuildFunction[List[String]], new ExtractorFactory[Response, List[String]] {
 		def getExtractor(response: Response) = new MultiRegexExtractor(getResponseBody(response))
 	})
 }

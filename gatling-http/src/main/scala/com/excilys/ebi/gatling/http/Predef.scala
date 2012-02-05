@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 package com.excilys.ebi.gatling.http
-import com.excilys.ebi.gatling.core.check.CheckWithVerifyBuilder
-import com.excilys.ebi.gatling.core.check.{ CheckOneWithExtractorFactoryBuilder, CheckMultipleWithExtractorFactoryBuilder }
+import com.excilys.ebi.gatling.core.check.{ CheckOneBuilder, CheckMultipleBuilder, CheckBuilder }
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.http.action.HttpRequestActionBuilder
 import com.excilys.ebi.gatling.http.check.body.{ HttpBodyXPathCheckBuilder, HttpBodyRegexCheckBuilder }
@@ -33,11 +32,11 @@ object Predef {
 	implicit def toHttpProtocolConfiguration(hpb: HttpProxyBuilder) = HttpProxyBuilder.toHttpProtocolConfiguration(hpb)
 	implicit def toHttpProtocolConfiguration(builder: HttpProtocolConfigurationBuilder) = HttpProtocolConfigurationBuilder.toHttpProtocolConfiguration(builder)
 
-	implicit def httpCheckWithVerifyBuilderToHttpCheck[X](builder: CheckWithVerifyBuilder[HttpCheck[X], Response, X]) = builder.build
-	implicit def httpCheckOneToExists[X](builder: CheckOneWithExtractorFactoryBuilder[HttpCheck[X], Response, X]) = builder.exists
-	implicit def httpCheckOneToHttpCheck[X](builder: CheckOneWithExtractorFactoryBuilder[HttpCheck[X], Response, X]) = builder.exists.build
-	implicit def httpCheckMultipleToNotEmpty[X](builder: CheckMultipleWithExtractorFactoryBuilder[HttpCheck[List[X]], Response, List[X]]) = builder.notEmpty
-	implicit def httpCheckMultipleToHttpCheck[X](builder: CheckMultipleWithExtractorFactoryBuilder[HttpCheck[List[X]], Response, List[X]]) = builder.notEmpty.build
+	implicit def httpCheckWithVerifyBuilderToHttpCheck[X](builder: CheckBuilder[HttpCheck[X], Response, X]) = builder.build
+	implicit def httpCheckOneToExists[X](builder: CheckOneBuilder[HttpCheck[X], Response, X]) = builder.exists
+	implicit def httpCheckOneToHttpCheck[X](builder: CheckOneBuilder[HttpCheck[X], Response, X]) = builder.exists.build
+	implicit def httpCheckMultipleToNotEmpty[X](builder: CheckMultipleBuilder[HttpCheck[List[X]], Response, List[X]]) = builder.notEmpty
+	implicit def httpCheckMultipleToHttpCheck[X](builder: CheckMultipleBuilder[HttpCheck[List[X]], Response, List[X]]) = builder.notEmpty.build
 	implicit def httpCheckBuilderToCheckOne[X](builder: HttpCheckBuilder[X]) = builder.find
 	implicit def httpCheckBuilderToExists[X](builder: HttpCheckBuilder[X]) = builder.find.exists
 	implicit def httpCheckBuilderToHttpCheck[X](builder: HttpCheckBuilder[X]) = builder.find.exists.build

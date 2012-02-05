@@ -31,7 +31,7 @@ import com.excilys.ebi.gatling.http.check.HttpCheckBuilder
 import akka.actor.ActorRef
 import com.excilys.ebi.gatling.core.config.ProtocolConfigurationRegistry
 import com.excilys.ebi.gatling.http.config.HttpProtocolConfiguration
-import com.excilys.ebi.gatling.core.check.CheckWithVerifyBuilder
+import com.excilys.ebi.gatling.core.check.CheckBuilder
 import com.excilys.ebi.gatling.http.check.HttpCheck
 import com.ning.http.client.Response
 

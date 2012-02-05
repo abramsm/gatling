@@ -18,7 +18,7 @@ import scala.collection.JavaConversions.asScalaIterable
 
 import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
 import com.excilys.ebi.gatling.core.check.extractor.Extractor
-import com.excilys.ebi.gatling.core.check.{ CheckOneWithExtractorFactoryBuilder, CheckMultipleWithExtractorFactoryBuilder }
+import com.excilys.ebi.gatling.core.check.{ CheckOneBuilder, CheckMultipleBuilder }
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.core.util.StringHelper.interpolate
 import com.excilys.ebi.gatling.http.check.{ HttpMultipleCheckBuilder, HttpCheck }
@@ -56,9 +56,9 @@ object HttpHeaderCheckBuilder {
  */
 class HttpHeaderCheckBuilder(what: Session => String) extends HttpMultipleCheckBuilder[String](what, HeadersReceived) {
 
-	def find: CheckOneWithExtractorFactoryBuilder[HttpCheck[String], Response, String] = find(0)
+	def find: CheckOneBuilder[HttpCheck[String], Response, String] = find(0)
 
-	def find(occurrence: Int) = new CheckOneWithExtractorFactoryBuilder(checkBuildFunction[String], new ExtractorFactory[Response, String] {
+	def find(occurrence: Int) = new CheckOneBuilder(checkBuildFunction[String], new ExtractorFactory[Response, String] {
 		def getExtractor(response: Response) = new Extractor[String] {
 			def extract(expression: String): Option[String] = {
 				val headers = response.getHeaders(expression)
@@ -71,7 +71,7 @@ class HttpHeaderCheckBuilder(what: Session => String) extends HttpMultipleCheckB
 		}
 	})
 
-	def findAll = new CheckMultipleWithExtractorFactoryBuilder(checkBuildFunction[List[String]], new ExtractorFactory[Response, List[String]] {
+	def findAll = new CheckMultipleBuilder(checkBuildFunction[List[String]], new ExtractorFactory[Response, List[String]] {
 		def getExtractor(response: Response) = new Extractor[List[String]] {
 			def extract(expression: String) = asScalaIterable(response.getHeaders(expression)).toList
 		}
