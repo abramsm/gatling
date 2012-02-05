@@ -14,15 +14,7 @@
  * limitations under the License.
  */
 package com.excilys.ebi.gatling.core.check
-
-import com.excilys.ebi.gatling.core.util.StringHelper._
 import com.excilys.ebi.gatling.core.session.Session
-
-object CheckStrategy {
-
-	implicit def stringToSessionFunction(s: String) = interpolate(s)
-	implicit def toSessionFunction[X](x: X) = (s: Session) => x
-}
 
 trait CheckStrategy[X] {
 	def apply(value: Option[X], s: Session): CheckResult[X]

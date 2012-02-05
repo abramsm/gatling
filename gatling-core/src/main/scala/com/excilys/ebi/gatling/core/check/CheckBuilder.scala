@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 package com.excilys.ebi.gatling.core.check
-
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
 
@@ -27,9 +26,6 @@ trait MultipleOccurence[C <: Check[R, X], CM <: Check[R, List[X]], R, X] extends
 	def find(occurrence: Int): CheckOneWithExtractorFactoryBuilder[C, R, X]
 
 	def findAll: CheckMultipleWithExtractorFactoryBuilder[CM, R, List[X]]
-
-	// TODO
-	//	def count: CheckWithExtractoryFactoryBuilder[R, Int]
 }
 
 class CheckOneWithExtractorFactoryBuilder[C <: Check[R, X], R, X](f: (ExtractorFactory[R, X], CheckStrategy[X], Option[String]) => C, extractorFactory: ExtractorFactory[R, X]) {

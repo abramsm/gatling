@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 package com.excilys.ebi.gatling.http
-
 import com.excilys.ebi.gatling.core.check.CheckWithVerifyBuilder
-import com.excilys.ebi.gatling.core.check.{CheckStrategy, CheckOneWithExtractorFactoryBuilder, CheckMultipleWithExtractorFactoryBuilder}
+import com.excilys.ebi.gatling.core.check.{ CheckOneWithExtractorFactoryBuilder, CheckMultipleWithExtractorFactoryBuilder }
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.http.action.HttpRequestActionBuilder
-import com.excilys.ebi.gatling.http.check.body.{HttpBodyXPathCheckBuilder, HttpBodyRegexCheckBuilder}
+import com.excilys.ebi.gatling.http.check.body.{ HttpBodyXPathCheckBuilder, HttpBodyRegexCheckBuilder }
 import com.excilys.ebi.gatling.http.check.header.HttpHeaderCheckBuilder
 import com.excilys.ebi.gatling.http.check.status.HttpStatusCheckBuilder
 import com.excilys.ebi.gatling.http.check.HttpCheck
 import com.excilys.ebi.gatling.http.check.HttpCheckBuilder
-import com.excilys.ebi.gatling.http.config.{HttpProxyBuilder, HttpProtocolConfigurationBuilder}
+import com.excilys.ebi.gatling.http.config.{ HttpProxyBuilder, HttpProtocolConfigurationBuilder }
 import com.ning.http.client.Response
 
 object Predef {
@@ -33,9 +32,6 @@ object Predef {
 	def httpConfig = HttpProtocolConfigurationBuilder.httpConfig
 	implicit def toHttpProtocolConfiguration(hpb: HttpProxyBuilder) = HttpProxyBuilder.toHttpProtocolConfiguration(hpb)
 	implicit def toHttpProtocolConfiguration(builder: HttpProtocolConfigurationBuilder) = HttpProtocolConfigurationBuilder.toHttpProtocolConfiguration(builder)
-
-	implicit def stringToSessionFunction(s: String) = CheckStrategy.stringToSessionFunction(s)
-	implicit def toSessionFunction[X](x: X) = CheckStrategy.toSessionFunction(x)
 
 	implicit def httpCheckWithVerifyBuilderToHttpCheck[X](builder: CheckWithVerifyBuilder[HttpCheck[X], Response, X]) = builder.build
 	implicit def httpCheckOneToExists[X](builder: CheckOneWithExtractorFactoryBuilder[HttpCheck[X], Response, X]) = builder.exists

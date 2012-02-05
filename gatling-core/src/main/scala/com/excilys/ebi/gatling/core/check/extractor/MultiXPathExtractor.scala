@@ -15,14 +15,11 @@
  */
 package com.excilys.ebi.gatling.core.check.extractor
 
-import scala.annotation.implicitNotFound
 import scala.collection.JavaConversions.asScalaBuffer
 
 import org.jaxen.dom.DOMXPath
 import org.jaxen.XPath
-import org.w3c.dom.{ Node, Document }
-
-import com.excilys.ebi.gatling.core.session.Session
+import org.w3c.dom.{Node, Document}
 
 class MultiXPathExtractor(document: Document) extends Extractor[List[String]] {
 

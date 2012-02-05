@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 package com.excilys.ebi.gatling.http.check.header
-
 import scala.collection.JavaConversions.asScalaIterable
+
 import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
 import com.excilys.ebi.gatling.core.check.extractor.Extractor
-import com.excilys.ebi.gatling.core.check.MultipleOccurence
 import com.excilys.ebi.gatling.core.check.{ CheckOneWithExtractorFactoryBuilder, CheckMultipleWithExtractorFactoryBuilder }
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.core.util.StringHelper.interpolate
-import com.excilys.ebi.gatling.http.check.HttpCheck
-import com.excilys.ebi.gatling.http.check.HttpCheckBuilder
+import com.excilys.ebi.gatling.http.check.{ HttpMultipleCheckBuilder, HttpCheck }
 import com.excilys.ebi.gatling.http.request.HttpPhase.HeadersReceived
 import com.ning.http.client.Response
-import com.excilys.ebi.gatling.http.check.HttpMultipleCheckBuilder
 
 /**
  * HttpHeaderCheckBuilder class companion

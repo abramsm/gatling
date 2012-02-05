@@ -16,7 +16,6 @@
 package com.excilys.ebi.gatling.core.check.extractor
 
 import java.util.regex.Pattern
-import com.excilys.ebi.gatling.core.log.Logging
 
 /**
  * This class is a built-in extractor that helps searching with Regular Expressions

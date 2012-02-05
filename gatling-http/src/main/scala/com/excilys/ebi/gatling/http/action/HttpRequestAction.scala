@@ -35,7 +35,6 @@ import com.excilys.ebi.gatling.core.config.ProtocolConfiguration
 import com.excilys.ebi.gatling.http.config.HttpProtocolConfiguration
 import com.excilys.ebi.gatling.core.check.CheckWithVerifyBuilder
 import com.excilys.ebi.gatling.http.request.HttpPhase.StatusReceived
-import com.excilys.ebi.gatling.core.check.CheckStrategy.toSessionFunction
 
 /**
  * HttpRequestAction class companion
@@ -44,7 +43,7 @@ object HttpRequestAction {
 	/**
 	 * This is the default HTTP check used to verify that the response status is 2XX
 	 */
-	val DEFAULT_HTTP_STATUS_CHECK = status.find.in(200 to 210).build
+	val DEFAULT_HTTP_STATUS_CHECK = status.find.in(Session => (200 to 210)).build
 
 	/**
 	 * The HTTP client used to send the requests

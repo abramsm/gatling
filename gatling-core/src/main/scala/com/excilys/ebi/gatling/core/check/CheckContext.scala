@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 package com.excilys.ebi.gatling.core.check
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.{ Map, HashMap }
+
 import com.excilys.ebi.gatling.core.log.Logging
-import scala.collection.mutable.Map
+
 import CheckContext.contextHolder
 
 object CheckContext extends Logging {
 
 	private[check] val contextHolder = new ThreadLocal[Map[String, Any]]
 
-	def performChecks(f: => Unit) = {
+	def doWithCheckContext(f: => Unit) = {
 		try {
 			f
-
 		} finally {
 			contextHolder.set(null)
 		}

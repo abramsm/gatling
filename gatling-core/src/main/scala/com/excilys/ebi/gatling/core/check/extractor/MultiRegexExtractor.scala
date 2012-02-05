@@ -15,9 +15,6 @@
  */
 package com.excilys.ebi.gatling.core.check.extractor
 
-import com.excilys.ebi.gatling.core.log.Logging
-import com.excilys.ebi.gatling.core.session.Session
-
 class MultiRegexExtractor(textContent: String) extends Extractor[List[String]] {
 
 	/**

@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 package com.excilys.ebi.gatling.http.check
-
+import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
+import com.excilys.ebi.gatling.core.check.CheckBuilder
 import com.excilys.ebi.gatling.core.check.CheckStrategy
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.http.request.HttpPhase.HttpPhase
 import com.ning.http.client.Response
-import com.excilys.ebi.gatling.core.check.CheckBuilder
-import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
 
 /**
  * This class serves as model for the HTTP-specific check builders

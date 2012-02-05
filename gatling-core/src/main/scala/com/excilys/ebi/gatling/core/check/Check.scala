@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 package com.excilys.ebi.gatling.core.check
-
 import com.excilys.ebi.gatling.core.check.extractor.ExtractorFactory
 import com.excilys.ebi.gatling.core.check.extractor.Extractor
 import com.excilys.ebi.gatling.core.session.Session
-import CheckContext.performChecks
+import CheckContext.doWithCheckContext
 
 object Check {
 	def applyChecks[R](s: Session, response: R, checks: List[Check[R, _]]): (Session, CheckResult[_]) = {
@@ -26,7 +25,7 @@ object Check {
 		var newSession = s
 		var lastCheckResult: CheckResult[_] = null
 
-		performChecks {
+		doWithCheckContext {
 			for (check <- checks) {
 				lastCheckResult = check.check(response, s)
 				if (!lastCheckResult.ok)

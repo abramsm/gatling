@@ -22,7 +22,6 @@ import org.jaxen.XPath
 import org.w3c.dom.{Node, Document}
 import org.xml.sax.{InputSource, EntityResolver}
 
-import com.excilys.ebi.gatling.core.log.Logging
 import com.excilys.ebi.gatling.core.util.StringHelper.EMPTY
 
 import javax.xml.parsers.DocumentBuilderFactory
@@ -53,7 +52,7 @@ object XPathExtractor {
  * @param xmlContent the XML document as an InputStream in which the XPath search will be applied
  * @param occurrence the occurrence of the results that should be returned
  */
-class XPathExtractor(document: Document, occurrence: Int) extends Extractor[String] with Logging {
+class XPathExtractor(document: Document, occurrence: Int) extends Extractor[String] {
 
 	/**
 	 * The actual extraction happens here. The XPath expression is searched for and the occurrence-th
@@ -65,8 +64,6 @@ class XPathExtractor(document: Document, occurrence: Int) extends Extractor[Stri
 	def extract(expression: String) = {
 
 		val xpathExpression: XPath = new DOMXPath(expression);
-
-		logger.debug("Extracting with expression : {}", expression)
 
 		val results = xpathExpression.selectNodes(document).asInstanceOf[java.util.List[Node]]
 
