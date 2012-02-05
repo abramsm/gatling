@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 package com.excilys.ebi.gatling.core.check
-import scala.collection.mutable.{ Map, HashMap }
+import scala.collection.mutable.{Map, HashMap}
 
 import com.excilys.ebi.gatling.core.log.Logging
-
-import CheckContext.contextHolder
 
 object CheckContext extends Logging {
 
@@ -31,9 +29,6 @@ object CheckContext extends Logging {
 			contextHolder.set(null)
 		}
 	}
-}
-
-trait CheckContextAware {
 
 	private def getContext = {
 		var context = contextHolder.get()
