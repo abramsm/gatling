@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 package com.excilys.ebi.gatling.http
-import com.excilys.ebi.gatling.core.check.{ CheckOneBuilder, CheckMultipleBuilder, CheckBuilder }
 import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.http.action.HttpRequestActionBuilder
 import com.excilys.ebi.gatling.http.check.body.{ HttpBodyXPathCheckBuilder, HttpBodyRegexCheckBuilder }
 import com.excilys.ebi.gatling.http.check.header.HttpHeaderCheckBuilder
 import com.excilys.ebi.gatling.http.check.status.HttpStatusCheckBuilder
-import com.excilys.ebi.gatling.http.check.HttpCheck
-import com.excilys.ebi.gatling.http.check.HttpCheckBuilder
 import com.excilys.ebi.gatling.http.config.{ HttpProxyBuilder, HttpProtocolConfigurationBuilder }
-import com.ning.http.client.Response
 
 object Predef {
 	def http(requestName: String) = HttpRequestActionBuilder.http(requestName)
@@ -31,15 +27,6 @@ object Predef {
 	def httpConfig = HttpProtocolConfigurationBuilder.httpConfig
 	implicit def toHttpProtocolConfiguration(hpb: HttpProxyBuilder) = HttpProxyBuilder.toHttpProtocolConfiguration(hpb)
 	implicit def toHttpProtocolConfiguration(builder: HttpProtocolConfigurationBuilder) = HttpProtocolConfigurationBuilder.toHttpProtocolConfiguration(builder)
-
-	implicit def httpCheckWithVerifyBuilderToHttpCheck[X](builder: CheckBuilder[HttpCheck[X], Response, X]) = builder.build
-	implicit def httpCheckOneToExists[X](builder: CheckOneBuilder[HttpCheck[X], Response, X]) = builder.exists
-	implicit def httpCheckOneToHttpCheck[X](builder: CheckOneBuilder[HttpCheck[X], Response, X]) = builder.exists.build
-	implicit def httpCheckMultipleToNotEmpty[X](builder: CheckMultipleBuilder[HttpCheck[List[X]], Response, List[X]]) = builder.notEmpty
-	implicit def httpCheckMultipleToHttpCheck[X](builder: CheckMultipleBuilder[HttpCheck[List[X]], Response, List[X]]) = builder.notEmpty.build
-	implicit def httpCheckBuilderToCheckOne[X](builder: HttpCheckBuilder[X]) = builder.find
-	implicit def httpCheckBuilderToExists[X](builder: HttpCheckBuilder[X]) = builder.find.exists
-	implicit def httpCheckBuilderToHttpCheck[X](builder: HttpCheckBuilder[X]) = builder.find.exists.build
 
 	def regex(what: Session => String) = HttpBodyRegexCheckBuilder.regex(what)
 	def regex(expression: String) = HttpBodyRegexCheckBuilder.regex(expression)
