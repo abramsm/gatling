@@ -23,7 +23,7 @@ import akka.actor.ActorRef
 import com.excilys.ebi.gatling.core.config.ProtocolConfigurationRegistry
 import com.excilys.ebi.gatling.core.config.ProtocolConfiguration
 import com.excilys.ebi.gatling.core.check.Check
-import com.excilys.ebi.gatling.core.check.CheckWithVerifyBuilder
+import com.excilys.ebi.gatling.core.check.CheckBuilder
 
 /**
  * Abstract class for all request actions. For example HTTPRequestAction, and later LDAPRequestAction, etc.
