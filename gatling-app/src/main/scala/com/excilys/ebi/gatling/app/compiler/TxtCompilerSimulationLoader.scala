@@ -18,22 +18,21 @@ import scala.collection.JavaConversions.enumerationAsScalaIterator
 import scala.io.Source
 import scala.tools.nsc.io.Path.string2path
 import scala.tools.nsc.io.{ VirtualFile, Path, AbstractFile }
-
-import com.excilys.ebi.gatling.core.config.GatlingConfig.CONFIG_ENCODING
+import com.excilys.ebi.gatling.core.config.GatlingConfiguration.configuration
 import com.excilys.ebi.gatling.core.config.GatlingFiles.GATLING_IMPORTS_FILE
 import com.excilys.ebi.gatling.core.util.FileHelper.TXT_EXTENSION
 import com.excilys.ebi.gatling.core.util.IOHelper.use
 import com.excilys.ebi.gatling.core.util.PathHelper.path2jfile
 import com.excilys.ebi.gatling.core.util.StringHelper.END_OF_LINE
 import com.excilys.ebi.gatling.core.Conventions
+import com.excilys.ebi.gatling.core.log.Logging
 
-object TextScriptInterpreter {
-	val DOLLAR_TEMP_REPLACEMENT = 178.toChar
-}
 /**
  * Text interpreter used to interpret .txt simulation files
  */
-class TextScenarioCompiler extends ScalaScenarioCompiler {
+class TxtCompilerSimulationLoader extends ScalaCompilerSimulationLoader with Logging {
+	
+	override protected def getSimulationClassName(sourceDirectory: Path) = "Simulation"
 
 	override def collectSourceFiles(sourceDirectory: Path): List[AbstractFile] = {
 
@@ -41,7 +40,7 @@ class TextScenarioCompiler extends ScalaScenarioCompiler {
 
 		val scenario = {
 			// Contains the contents of the simulation file
-			val initialFileBodyContent = Source.fromFile(sourceDirectory.jfile, CONFIG_ENCODING).mkString.replace('$', TextScriptInterpreter.DOLLAR_TEMP_REPLACEMENT)
+			val initialFileBodyContent = Source.fromFile(sourceDirectory.jfile, configuration.encoding).mkString
 
 			// Includes contents of included files into the simulation file 
 			"""include\("(.*)"\)""".r.replaceAllIn(initialFileBodyContent,
@@ -49,17 +48,18 @@ class TextScenarioCompiler extends ScalaScenarioCompiler {
 					val sourceDirectoryPath = sourceDirectory.getAbsolutePath
 					Conventions.getSourceDirectoryNameFromRootFileName(sourceDirectoryPath).map { sourceDirectoryName =>
 						val includePath = sourceDirectoryName / result.group(1) + TXT_EXTENSION
-						Source.fromFile(includePath, CONFIG_ENCODING).mkString.replace('$', TextScriptInterpreter.DOLLAR_TEMP_REPLACEMENT).replace("\\", "\\\\") + END_OF_LINE + END_OF_LINE
+						Source.fromFile(includePath, configuration.encoding).mkString.replace("\\", "\\\\").replace("$", "\\$") + END_OF_LINE + END_OF_LINE
 					}.getOrElse(throw new IllegalArgumentException("Couldn't find include replacement"))
 
-				}).replace(TextScriptInterpreter.DOLLAR_TEMP_REPLACEMENT, '$')
+				})
 		}
 
 		val resolvedScenario = {
 			val builder = new StringBuilder
 			imports.foreach(builder.append(_).append("\n"))
 			builder.append("class Simulation extends GatlingSimulation {\n")
-			builder.append(scenario).append("\n}")
+			builder.append("def apply = {\n")
+			builder.append(scenario).append("\n}").append("\n}")
 			builder.toString
 		}
 

@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.excilys.ebi.gatling.script
+package com.excilys.ebi.gatling.app.compiler
 
-import com.excilys.ebi.gatling.core.Predef.runSimFunction
+import com.excilys.ebi.gatling.app.SimulationLoader
+import com.excilys.ebi.gatling.app.GatlingSimulation
+import com.excilys.ebi.gatling.core.util.ReflectionHelper.getNewInstanceByClassName
 
-/**
- * This trait is to be extended by Scala simulations
- */
-trait GatlingSimulation extends App {
-	def runSimulation = runSimFunction(args(0))
+class ClasspathSimulationLoader extends SimulationLoader {
+	def apply(className: String) = getNewInstanceByClassName[GatlingSimulation](className, getClass.getClassLoader)
 }

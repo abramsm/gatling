@@ -29,7 +29,6 @@ import com.excilys.ebi.gatling.charts.config.ChartsFiles.menuFile
 import com.excilys.ebi.gatling.charts.template.{ PageTemplate, MenuTemplate }
 import com.excilys.ebi.gatling.charts.writer.TemplateWriter
 import com.excilys.ebi.gatling.core.config.GatlingFiles.{ styleFolder, jsFolder, GATLING_ASSETS_STYLE_PACKAGE, GATLING_ASSETS_JS_PACKAGE }
-import com.excilys.ebi.gatling.core.config.GatlingConfig
 import com.excilys.ebi.gatling.core.log.Logging
 import com.excilys.ebi.gatling.core.result.reader.DataReader
 import com.excilys.ebi.gatling.core.util.FileHelper.{ formatToFilename, HTML_EXTENSION }
@@ -104,7 +103,7 @@ object ReportsGenerator extends Logging {
 
 	private def copyAssets(runOn: String) = {
 		def copyFolder(sourcePackage: String, destFolderPath: Path) = {
-			
+
 			val sourcePackageAsPath = sourcePackage.replace("/", File.separator)
 
 			for (packageURL <- asIterator(getClass.getClassLoader.getResources(sourcePackage))) {

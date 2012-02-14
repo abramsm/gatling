@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.excilys.ebi.gatling.app.compiler
+package com.excilys.ebi.gatling.app
 
-import org.joda.time.DateTime
-
-import com.excilys.ebi.gatling.core.util.ReflectionHelper.getNewInstanceByClassName
-
-class IdeScenarioCompiler extends ScenarioCompiler {
-	def run(className: String, startDate: DateTime) = {
-		val runner = getNewInstanceByClassName[App](className, getClass.getClassLoader)
-		runner.main(Array(startDate.toString));
-	}
-}
+case class Options(
+	var reportsOnlyFolder: Option[String] = None,
+	var noReports: Boolean = false,
+	var configFileName: Option[String] = None,
+	var resultsFolder: Option[String] = None,
+	var dataFolder: Option[String] = None,
+	var requestBodiesFolder: Option[String] = None,
+	var simulationFolder: Option[String] = None,
+	var simulationPackage: Option[String] = None,
+	var simulations: Option[List[String]] = None)

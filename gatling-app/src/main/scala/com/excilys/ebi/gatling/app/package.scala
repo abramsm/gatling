@@ -13,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.excilys.ebi.gatling.app.compiler
+package com.excilys.ebi.gatling
+import com.excilys.ebi.gatling.core.scenario.configuration.ScenarioConfigurationBuilder
+package object app {
 
-import org.joda.time.DateTime
-
-import com.excilys.ebi.gatling.core.log.Logging
-
-/**
- * This trait serves as model for all scenarios compilers. Gatling has three 'compilers' :
- *  - Text
- *  - Scala
- *  - Eclipse
- */
-trait ScenarioCompiler extends Logging {
-	def run(fileName: String, startDate: DateTime)
+	type SimulationLoader = String => GatlingSimulation
+	type GatlingSimulation = () => Seq[ScenarioConfigurationBuilder]
 }

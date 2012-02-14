@@ -1,14 +1,17 @@
 import com.excilys.ebi.gatling.core.Predef._
 import com.excilys.ebi.gatling.http.Predef._
-import com.excilys.ebi.gatling.script.GatlingSimulation
+import com.excilys.ebi.gatling.app.GatlingSimulation
 
 class Simulation extends GatlingSimulation {
 
-	val urlBase = "http://excilys-bank-web.cloudfoundry.com"
+	def apply = {
 
-	val httpConf = httpConfig.baseURL(urlBase)
+		val urlBase = "http://excilys-bank-web.cloudfoundry.com"
 
-	runSimulation(
-		SomeScenario.scn.configure users 10 ramp 10 protocolConfig httpConf,
-		SomeOtherScenario.otherScn.configure users 5 ramp 20 delay 30 protocolConfig httpConf)
+		val httpConf = httpConfig.baseURL(urlBase)
+
+		List(
+			SomeScenario.scn.configure users 10 ramp 10 protocolConfig httpConf,
+			SomeOtherScenario.otherScn.configure users 5 ramp 20 delay 30 protocolConfig httpConf)
+	}
 }

@@ -2,9 +2,11 @@
 
 import com.excilys.ebi.gatling.core.Predef._
 import com.excilys.ebi.gatling.http.Predef._
-import com.excilys.ebi.gatling.script.GatlingSimulation
+import com.excilys.ebi.gatling.app.GatlingSimulation
 
 class Simulation#if($!{package})${date}#end extends GatlingSimulation {
-#parse("scenarioText.vm")
 
+def apply ={
+#parse("scenarioText.vm")
+}
 }
