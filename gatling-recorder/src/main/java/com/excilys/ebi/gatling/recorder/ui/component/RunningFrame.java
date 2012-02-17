@@ -578,10 +578,7 @@ public class RunningFrame extends JFrame {
 	}
 
 	private String getScenarioFileName(Date date) {
-		if (Configuration.getInstance().getIdePackage() != null)
-			return "Simulation" + FORMAT.format(date) + ".scala";
-		else
-			return FORMAT.format(date) + "_scenario@default.scala";
+		return "Simulation" + FORMAT.format(date) + ".scala";
 	}
 
 	private void saveScenario() {
@@ -620,7 +617,7 @@ public class RunningFrame extends JFrame {
 		Template template = null;
 		Writer writer = null;
 		try {
-			template = ve.getTemplate("scenarioScala.vm");
+			template = ve.getTemplate("simulation.vm");
 			writer = new OutputStreamWriter(new FileOutputStream(new File(getOutputFolder(), getScenarioFileName(startDate))), configuration.getEncoding());
 			template.merge(context, writer);
 			writer.flush();

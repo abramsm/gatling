@@ -22,5 +22,6 @@ case class Options(
 	var resultsFolder: Option[String] = None,
 	var dataFolder: Option[String] = None,
 	var requestBodiesFolder: Option[String] = None,
-	var simulationFolder: Option[String] = None,
+	var simulationSourcesFolder: Option[String] = None,
+	var simulationBinariesFolder: Option[String] = None,
 	var simulations: Option[List[String]] = None)

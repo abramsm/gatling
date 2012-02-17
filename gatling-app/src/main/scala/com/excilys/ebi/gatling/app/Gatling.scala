@@ -18,8 +18,6 @@ import java.io.{ StringWriter, PrintWriter }
 import java.lang.System.currentTimeMillis
 
 import scala.tools.nsc.interpreter.AbstractFileClassLoader
-import scala.tools.nsc.io.Path.jfile2path
-import scala.tools.nsc.io.Path.string2path
 import scala.tools.nsc.io.{ PlainFile, Path, File, Directory }
 import scala.tools.nsc.reporters.ConsoleReporter
 import scala.tools.nsc.{ Settings, Global }
@@ -34,6 +32,7 @@ import com.excilys.ebi.gatling.core.runner.Runner
 import com.excilys.ebi.gatling.core.util.DateHelper.printFileNameDate
 import com.excilys.ebi.gatling.core.util.IOHelper.use
 import com.twitter.io.TempDirectory
+import com.excilys.ebi.gatling.core.util.ReflectionHelper.getNewInstanceByClassName
 
 import scopt.OptionParser
 
@@ -58,7 +57,7 @@ object Gatling extends Logging {
 			opt("df", "data-folder", "<folderName>", "Uses <folderName> as the folder where feeders are stored", { v: String => options.dataFolder = Some(v) })
 			opt("rf", "results-folder", "<folderName>", "Uses <folderName> as the folder where results are stored", { v: String => options.resultsFolder = Some(v) })
 			opt("bf", "request-bodies-folder", "<folderName>", "Uses <folderName> as the folder where request bodies are stored", { v: String => options.requestBodiesFolder = Some(v) })
-			opt("sf", "simulations-folder", "<folderName>", "Uses <folderName> to discover simulations that could be run", { v: String => options.simulationFolder = Some(v) })
+			opt("sf", "simulations-folder", "<folderName>", "Uses <folderName> to discover simulations that could be run", { v: String => options.simulationSourcesFolder = Some(v) })
 			opt("s", "simulations", "<simulationNames>", "Runs the <simulationNames> sequentially", { v: String => options.simulations = Some(v.split(",").toList) })
 		}
 
@@ -73,14 +72,45 @@ object Gatling extends Logging {
 
 class Gatling(options: Options) extends Logging {
 
-	val tempDir = Directory(TempDirectory.create(true))
+	lazy val tempDir = Directory(TempDirectory.create(true))
 
 	// Initializes configuration
-	GatlingConfiguration.setUp(options.configFileName, options.dataFolder, options.requestBodiesFolder, options.resultsFolder, options.simulationFolder)
+	GatlingConfiguration.setUp(options.configFileName, options.dataFolder, options.requestBodiesFolder, options.resultsFolder, options.simulationSourcesFolder)
 
-	def collectScalaFiles: List[File] = Directory(GatlingFiles.simulationsFolder).deepFiles.filter(_.hasExtension("scala")).toList
+	def launch {
+		val reportsFolders = options.reportsOnlyFolder match {
+			case Some(reportsOnlyFolder) => List(reportsOnlyFolder)
+			case None =>
+				val classes = options.simulationBinariesFolder match {
 
-	def compileScalaFiles(files: List[File]): AbstractFileClassLoader = {
+					case Some(simulationBinariesFolder) =>
+						// expect simulations to have been pre-compiled (ex: IDE)
+						val classNames = getClassNamesFromBinariesDirectory(Directory(simulationBinariesFolder))
+						loadSimulationClasses(classNames)
+
+					case None =>
+						// TODO use andThen once I f***g manage to use it with ScalaIDE
+						val scalaFiles = collectFiles(GatlingFiles.simulationsFolder, "scala")
+						val classloader = compile(scalaFiles)
+						val classNames = getClassNamesFromBinariesDirectory(tempDir)
+						loadSimulationClasses(classNames, classloader)
+				}
+
+				val selectedClasses = options.simulations match {
+					case Some(simulations) => classes.filter(clazz => simulations.contains(clazz.getName))
+					case None => List(selectSimulationClass(classes))
+				}
+
+				run(selectedClasses.map(_.newInstance): _*)
+		}
+
+		if (!options.noReports)
+			reportsFolders.foreach(generateReports(_))
+	}
+
+	private def collectFiles(directory: Path, extension: String): List[File] = Directory(directory).deepFiles.filter(_.hasExtension(extension)).toList
+
+	private def compile(files: List[File]): AbstractFileClassLoader = {
 
 		val byteCodeDir = PlainFile.fromPath(tempDir)
 		val classLoader = new AbstractFileClassLoader(byteCodeDir, getClass.getClassLoader)
@@ -103,9 +133,7 @@ class Gatling(options: Options) extends Logging {
 			val reporter = new ConsoleReporter(settings, Console.in, pw)
 			val compiler = new Global(settings, reporter)
 
-			val start = currentTimeMillis
 			(new compiler.Run).compileFiles(files.map(PlainFile.fromPath(_)))
-			println("compiled in " + (currentTimeMillis - start))
 
 			// Bail out if compilation failed
 			if (reporter.hasErrors) {
@@ -117,40 +145,26 @@ class Gatling(options: Options) extends Logging {
 		}
 	}
 
-	def pathToClassName(path: Path, root: Path): String = (path.parent / path.stripExtension)
+	private def pathToClassName(path: Path, root: Path): String = (path.parent / path.stripExtension)
 		.toString
 		.stripPrefix(root + File.separator)
 		.replace(File.separator, ".")
 
-	def loadSimulationClasses(scalaFiles: List[File], classLoader: AbstractFileClassLoader): List[Class[GatlingSimulation]] = tempDir
-		.deepFiles
+	private def getClassNamesFromBinariesDirectory(dir: Directory): List[String] = dir.deepFiles
 		.filter(_.hasExtension("class"))
-		.map(pathToClassName(_, tempDir))
+		.map(pathToClassName(_, dir)).toList
+
+	private def loadSimulationClasses(classNames: List[String]): List[Class[Simulation]] = classNames
+		.map(Class.forName(_))
+		.filter(classOf[Simulation].isAssignableFrom(_))
+		.map(_.asInstanceOf[Class[Simulation]]).toList
+
+	private def loadSimulationClasses(classNames: List[String], classLoader: AbstractFileClassLoader): List[Class[Simulation]] = classNames
 		.map(classLoader.findClass(_))
-		.filter(classOf[GatlingSimulation].isAssignableFrom(_))
-		.map(_.asInstanceOf[Class[GatlingSimulation]]).toList
+		.filter(classOf[Simulation].isAssignableFrom(_))
+		.map(_.asInstanceOf[Class[Simulation]]).toList
 
-	def launch {
-		val reportsFolders = options.reportsOnlyFolder match {
-			case Some(reportsOnlyFolder) => List(reportsOnlyFolder)
-			case None =>
-				val scalaFiles = collectScalaFiles
-				val classloader = compileScalaFiles(scalaFiles)
-				val classes = loadSimulationClasses(scalaFiles, classloader)
-
-				val selectedClasses = options.simulations match {
-					case Some(simulations) => classes.filter(clazz => simulations.contains(clazz.getName))
-					case None => List(selectSimulationClass(classes))
-				}
-
-				run(selectedClasses.map(_.newInstance): _*)
-		}
-
-		if (!options.noReports)
-			reportsFolders.foreach(generateReports(_))
-	}
-
-	private def selectSimulationClass(classes: List[Class[GatlingSimulation]]): Class[GatlingSimulation] = {
+	private def selectSimulationClass(classes: List[Class[Simulation]]): Class[Simulation] = {
 
 		val selected = classes.size match {
 			case 0 =>
@@ -171,7 +185,7 @@ class Gatling(options: Options) extends Logging {
 		classes(selected)
 	}
 
-	def run(simulations: GatlingSimulation*): Seq[String] = {
+	private def run(simulations: Simulation*): Seq[String] = {
 
 		val size = simulations.size
 

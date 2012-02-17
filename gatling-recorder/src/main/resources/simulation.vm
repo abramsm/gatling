@@ -2,9 +2,9 @@
 
 import com.excilys.ebi.gatling.core.Predef._
 import com.excilys.ebi.gatling.http.Predef._
-import com.excilys.ebi.gatling.app.GatlingSimulation
+import com.excilys.ebi.gatling.app.Simulation
 
-class Simulation#if($!{package})${date}#end extends GatlingSimulation {
+class Simulation${date} extends Simulation {
 
 def apply ={
 	val urlBase = "${protocol}://${host}#if(${port} != -1):${port}#end"
