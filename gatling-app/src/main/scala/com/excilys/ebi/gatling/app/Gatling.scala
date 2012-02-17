@@ -18,8 +18,9 @@ import java.io.{ StringWriter, PrintWriter }
 import java.lang.System.currentTimeMillis
 
 import scala.tools.nsc.interpreter.AbstractFileClassLoader
+import scala.tools.nsc.io.Path.jfile2path
 import scala.tools.nsc.io.Path.string2path
-import scala.tools.nsc.io.{ VirtualDirectory, PlainFile, Path, File, Directory }
+import scala.tools.nsc.io.{ PlainFile, Path, File, Directory }
 import scala.tools.nsc.reporters.ConsoleReporter
 import scala.tools.nsc.{ Settings, Global }
 
@@ -32,6 +33,7 @@ import com.excilys.ebi.gatling.core.log.Logging
 import com.excilys.ebi.gatling.core.runner.Runner
 import com.excilys.ebi.gatling.core.util.DateHelper.printFileNameDate
 import com.excilys.ebi.gatling.core.util.IOHelper.use
+import com.twitter.io.TempDirectory
 
 import scopt.OptionParser
 
@@ -71,6 +73,8 @@ object Gatling extends Logging {
 
 class Gatling(options: Options) extends Logging {
 
+	val tempDir = Directory(TempDirectory.create(true))
+
 	// Initializes configuration
 	GatlingConfiguration.setUp(options.configFileName, options.dataFolder, options.requestBodiesFolder, options.resultsFolder, options.simulationFolder)
 
@@ -78,7 +82,7 @@ class Gatling(options: Options) extends Logging {
 
 	def compileScalaFiles(files: List[File]): AbstractFileClassLoader = {
 
-		val byteCodeDir = new VirtualDirectory("memory", None)
+		val byteCodeDir = PlainFile.fromPath(tempDir)
 		val classLoader = new AbstractFileClassLoader(byteCodeDir, getClass.getClassLoader)
 
 		def generateSettings: Settings = {
@@ -99,7 +103,9 @@ class Gatling(options: Options) extends Logging {
 			val reporter = new ConsoleReporter(settings, Console.in, pw)
 			val compiler = new Global(settings, reporter)
 
+			val start = currentTimeMillis
 			(new compiler.Run).compileFiles(files.map(PlainFile.fromPath(_)))
+			println("compiled in " + (currentTimeMillis - start))
 
 			// Bail out if compilation failed
 			if (reporter.hasErrors) {
@@ -111,15 +117,18 @@ class Gatling(options: Options) extends Logging {
 		}
 	}
 
-	def pathToClassName(path: Path): String = path.toString
-		.stripPrefix(GatlingFiles.simulationsFolder.path + File.separator)
-		.stripSuffix(".scala")
+	def pathToClassName(path: Path, root: Path): String = (path.parent / path.stripExtension)
+		.toString
+		.stripPrefix(root + File.separator)
 		.replace(File.separator, ".")
 
-	def loadSimulationClasses(scalaFiles: List[File], classLoader: AbstractFileClassLoader): List[Class[GatlingSimulation]] = scalaFiles
-		.map(file => classLoader.findClass(pathToClassName(file.path)))
+	def loadSimulationClasses(scalaFiles: List[File], classLoader: AbstractFileClassLoader): List[Class[GatlingSimulation]] = tempDir
+		.deepFiles
+		.filter(_.hasExtension("class"))
+		.map(pathToClassName(_, tempDir))
+		.map(classLoader.findClass(_))
 		.filter(classOf[GatlingSimulation].isAssignableFrom(_))
-		.map(_.asInstanceOf[Class[GatlingSimulation]])
+		.map(_.asInstanceOf[Class[GatlingSimulation]]).toList
 
 	def launch {
 		val reportsFolders = options.reportsOnlyFolder match {
