@@ -17,6 +17,5 @@ package com.excilys.ebi.gatling
 import com.excilys.ebi.gatling.core.scenario.configuration.ScenarioConfigurationBuilder
 package object app {
 
-	type SimulationLoader = String => GatlingSimulation
 	type GatlingSimulation = () => Seq[ScenarioConfigurationBuilder]
 }

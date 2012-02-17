@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 package com.excilys.ebi.gatling.app
+import java.io.{ StringWriter, PrintWriter }
 import java.lang.System.currentTimeMillis
 
-import scala.collection.immutable.TreeSet
-import scala.collection.mutable.{ Set => MSet }
-import scala.collection.mutable.{ MultiMap, HashMap }
-import scala.tools.nsc.io.Directory
+import scala.tools.nsc.interpreter.AbstractFileClassLoader
+import scala.tools.nsc.io.Path.string2path
+import scala.tools.nsc.io.{ VirtualDirectory, PlainFile, Path, File, Directory }
+import scala.tools.nsc.reporters.ConsoleReporter
+import scala.tools.nsc.{ Settings, Global }
 
 import org.joda.time.DateTime
 
-import com.excilys.ebi.gatling.app.compiler.{ TxtCompilerSimulationLoader, ScalaCompilerSimulationLoader, ClasspathSimulationLoader }
 import com.excilys.ebi.gatling.charts.config.ChartsFiles.activeSessionsFile
 import com.excilys.ebi.gatling.charts.report.ReportsGenerator
-import com.excilys.ebi.gatling.core.config.GatlingFiles
-import com.excilys.ebi.gatling.core.config.GatlingConfiguration
+import com.excilys.ebi.gatling.core.config.{ GatlingFiles, GatlingConfiguration }
 import com.excilys.ebi.gatling.core.log.Logging
 import com.excilys.ebi.gatling.core.runner.Runner
 import com.excilys.ebi.gatling.core.util.DateHelper.printFileNameDate
-import com.excilys.ebi.gatling.core.util.FileHelper.{ TXT_EXTENSION, SCALA_EXTENSION }
-import com.excilys.ebi.gatling.core.Conventions
+import com.excilys.ebi.gatling.core.util.IOHelper.use
 
 import scopt.OptionParser
 
@@ -58,15 +57,13 @@ object Gatling extends Logging {
 			opt("rf", "results-folder", "<folderName>", "Uses <folderName> as the folder where results are stored", { v: String => options.resultsFolder = Some(v) })
 			opt("bf", "request-bodies-folder", "<folderName>", "Uses <folderName> as the folder where request bodies are stored", { v: String => options.requestBodiesFolder = Some(v) })
 			opt("sf", "simulations-folder", "<folderName>", "Uses <folderName> to discover simulations that could be run", { v: String => options.simulationFolder = Some(v) })
-			opt("sp", "simulations-package", "<packageName>", "Uses <packageName> to start the simulations", { v: String => options.simulationPackage = Some(v) })
 			opt("s", "simulations", "<simulationNames>", "Runs the <simulationNames> sequentially", { v: String => options.simulations = Some(v.split(",").toList) })
 		}
 
-		if (cliOptsParser.parse(args)) {
+		if (cliOptsParser.parse(args))
 			start(options)
-		}
 
-		// if arguments are bad, usage message is displayed
+		// if arguments are incorrect, usage message is displayed
 	}
 
 	def start(options: Options) = new Gatling(options: Options).launch
@@ -77,41 +74,76 @@ class Gatling(options: Options) extends Logging {
 	// Initializes configuration
 	GatlingConfiguration.setUp(options.configFileName, options.dataFolder, options.requestBodiesFolder, options.resultsFolder, options.simulationFolder)
 
-	def launch {
-		options.reportsOnlyFolder match {
-			case Some(reportsOnlyFolder) => generateStats(reportsOnlyFolder)
-			case None =>
-				options.simulations match {
-					case Some(simulations) =>
-					case None => {
-						val selectedFile = options.simulationPackage match {
-							case Some(simulationPackage) => selectSimulationFromSourceFolder(simulationPackage)
-							case None => selectSimulationFileFromFileSystem
-						}
-						run(loadSimulations(selectedFile): _*)
-					}
-				}
+	def collectScalaFiles: List[File] = Directory(GatlingFiles.simulationsFolder).deepFiles.filter(_.hasExtension("scala")).toList
+
+	def compileScalaFiles(files: List[File]): AbstractFileClassLoader = {
+
+		val byteCodeDir = new VirtualDirectory("memory", None)
+		val classLoader = new AbstractFileClassLoader(byteCodeDir, getClass.getClassLoader)
+
+		def generateSettings: Settings = {
+			val settings = new Settings
+			settings.usejavacp.value = true
+			settings.outputDirs.setSingleOutput(byteCodeDir)
+			settings.deprecation.value = true
+			settings.unchecked.value = true
+			settings
+		}
+
+		// Prepare an object for collecting error messages from the compiler
+		val messageCollector = new StringWriter
+
+		use(new PrintWriter(messageCollector)) { pw =>
+			// Initialize the compiler
+			val settings = generateSettings
+			val reporter = new ConsoleReporter(settings, Console.in, pw)
+			val compiler = new Global(settings, reporter)
+
+			(new compiler.Run).compileFiles(files.map(PlainFile.fromPath(_)))
+
+			// Bail out if compilation failed
+			if (reporter.hasErrors) {
+				reporter.printSummary
+				throw new RuntimeException("Compilation failed:\n" + messageCollector.toString)
+			}
+
+			classLoader
 		}
 	}
 
-	private def selectSimulationFileFromFileSystem: String = {
+	def pathToClassName(path: Path): String = path.toString
+		.stripPrefix(GatlingFiles.simulationsFolder.path + File.separator)
+		.stripSuffix(".scala")
+		.replace(File.separator, ".")
 
-		// Getting files in scenarios folder
-		val files = Directory(GatlingFiles.simulationsFolder).files.map(_.name).filter(name => name.endsWith(TXT_EXTENSION) || name.endsWith(SCALA_EXTENSION)).filterNot(_.startsWith(".")).toSeq
+	def loadSimulationClasses(scalaFiles: List[File], classLoader: AbstractFileClassLoader): List[Class[GatlingSimulation]] = scalaFiles
+		.map(file => classLoader.findClass(pathToClassName(file.path)))
+		.filter(classOf[GatlingSimulation].isAssignableFrom(_))
+		.map(_.asInstanceOf[Class[GatlingSimulation]])
 
-		// Sorting file names by radical and storing groups for display purpose
-		val sortedFiles = new HashMap[String, MSet[String]] with MultiMap[String, String]
-		var sortedGroups = new TreeSet[String]
+	def launch {
+		val reportsFolders = options.reportsOnlyFolder match {
+			case Some(reportsOnlyFolder) => List(reportsOnlyFolder)
+			case None =>
+				val scalaFiles = collectScalaFiles
+				val classloader = compileScalaFiles(scalaFiles)
+				val classes = loadSimulationClasses(scalaFiles, classloader)
 
-		for (fileName <- files) {
-			Conventions.getSourceDirectoryNameFromRootFileName(fileName).map { sourceDirectoryName =>
-				sortedFiles.addBinding(sourceDirectoryName, fileName)
-				sortedGroups += sourceDirectoryName
-			}
+				val selectedClasses = options.simulations match {
+					case Some(simulations) => classes.filter(clazz => simulations.contains(clazz.getName))
+					case None => List(selectSimulationClass(classes))
+				}
+
+				run(selectedClasses.map(_.newInstance): _*)
 		}
 
-		// We get the folder name of the run simulation
-		files.size match {
+		if (!options.noReports)
+			reportsFolders.foreach(generateReports(_))
+	}
+
+	private def selectSimulationClass(classes: List[Class[GatlingSimulation]]): Class[GatlingSimulation] = {
+
+		val selected = classes.size match {
 			case 0 =>
 				// If there is no simulation file
 				logger.error("There are no simulation scripts. Please verify that your scripts are in user-files/simulations and that they do not start with a .")
@@ -119,46 +151,33 @@ class Gatling(options: Options) extends Logging {
 			case 1 =>
 				// If there is only one simulation file
 				logger.info("There is only one simulation, executing it.")
-				files(0)
-			case _ =>
-				// If there are several simulation files
-				println("Which simulation do you want to execute ?")
-
-				var i = 0
-				var filesList: List[String] = Nil
-
-				for (group <- sortedGroups) {
-					println("\n - " + group)
-					sortedFiles.get(group).map {
-						for (fileName <- _) {
-							Conventions.getSimulationSpecificName(fileName).map { simulationSpecificName =>
-								println("     [" + i + "] " + simulationSpecificName)
-								filesList = fileName :: filesList
-								i += 1
-							}
-						}
-					}
+				0
+			case size =>
+				for (i <- 0 until size) {
+					println("     [" + i + "] " + classes(i).getName)
 				}
-
-				println("\nSimulation #: ")
-
-				val selection = Console.readInt
-				filesList.reverse(selection)
+				Console.readInt
 		}
+
+		classes(selected)
 	}
 
-	private def selectSimulationFromSourceFolder(simulationPackage: String): String = {
+	def run(simulations: GatlingSimulation*): Seq[String] = {
 
-		println("Which simulation do you want to execute ?")
+		val size = simulations.size
 
-		val files = Directory(GatlingFiles.simulationsFolder).files.map(_.name.takeWhile(_ != '.')).toList
+		for (i <- 0 until size) yield {
+			val simulation = simulations(i)
+			val name = simulation.getClass.getName
+			println(">> Running simulation (" + (i + 1) + "/" + size + ") - " + name)
+			println("Simulation " + name + " started...")
 
-		for (i <- 0 until files.size) {
-			println("   [" + i + "] " + files(i))
+			val startDate = DateTime.now
+			new Runner(startDate, simulation()).run
+			println("Simulation Finished.")
+
+			printFileNameDate(startDate)
 		}
-
-		val selection = Console.readInt
-		simulationPackage + "." + files(selection)
 	}
 
 	/**
@@ -167,7 +186,7 @@ class Gatling(options: Options) extends Logging {
 	 * @param folderName The folder from which the simulation.log will be parsed
 	 * @return Nothing
 	 */
-	private def generateStats(folderName: String) {
+	private def generateReports(folderName: String) {
 		println("Generating reports...")
 		val start = currentTimeMillis
 		if (ReportsGenerator.generateFor(folderName)) {
@@ -175,44 +194,6 @@ class Gatling(options: Options) extends Logging {
 			println("Please open the following file : " + activeSessionsFile(folderName))
 		} else {
 			println("Reports weren't generated")
-		}
-	}
-
-	/**
-	 * This method actually runs the simulation by interpreting the scripts.
-	 *
-	 * @param fileName The name of the simulation file that will be executed
-	 * @return The name of the folder of this simulation (ie: its date)
-	 */
-	private def loadSimulations(fileNames: String*) = {
-		val size = fileNames.size
-
-		for (i <- 0 until size) yield {
-			val fileName = fileNames(i)
-			println(">> Running simulation (" + (i + 1) + "/" + size + ") - " + fileName)
-			println("Simulation " + fileName + " started...")
-
-			val simulationLoader =
-				fileName match {
-					case fn if (fn.endsWith(SCALA_EXTENSION)) => new ScalaCompilerSimulationLoader
-					case fn if (fn.endsWith(TXT_EXTENSION)) => new TxtCompilerSimulationLoader
-					case _ => new ClasspathSimulationLoader
-				}
-
-			simulationLoader(fileName)
-		}
-	}
-
-	def run(simulations: GatlingSimulation*) {
-		simulations.foreach { simulation =>
-			val startDate = DateTime.now
-			new Runner(startDate, simulation()).run
-			println("Simulation Finished.")
-
-			// Returns the folderName in which the simulation is stored
-			if (!options.noReports) {
-				generateStats(printFileNameDate(startDate))
-			}
 		}
 	}
 }

@@ -23,5 +23,4 @@ case class Options(
 	var dataFolder: Option[String] = None,
 	var requestBodiesFolder: Option[String] = None,
 	var simulationFolder: Option[String] = None,
-	var simulationPackage: Option[String] = None,
 	var simulations: Option[List[String]] = None)

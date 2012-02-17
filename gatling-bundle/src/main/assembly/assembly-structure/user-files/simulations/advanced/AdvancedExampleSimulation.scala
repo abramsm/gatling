@@ -1,8 +1,9 @@
+package advanced
 import com.excilys.ebi.gatling.core.Predef._
 import com.excilys.ebi.gatling.http.Predef._
 import com.excilys.ebi.gatling.app.GatlingSimulation
 
-class Simulation extends GatlingSimulation {
+class AdvancedExampleSimulation extends GatlingSimulation {
 
 	def apply = {
 
